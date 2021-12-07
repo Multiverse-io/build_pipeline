@@ -29,6 +29,7 @@ defmodule BuildPipeline.Server do
     {:noreply, state}
   end
 
+  # TODO make this module a supervisor maybe?
   @impl true
   def handle_cast({:runner_finished, runner_pid, _result}, state) do
     # IO.inspect(Map.fetch!(state.runners, runner_pid).build_step_name)
