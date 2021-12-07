@@ -12,6 +12,7 @@ defmodule BuildPipeline.ConfigFile do
     "shellCommand" => :shell_command
   }
 
+  # TODO add test to assert all build_step_name's are unique
   def read(%{cwd: cwd}) do
     file_location = "#{cwd}/build_pipeline_config.json"
 
@@ -59,15 +60,29 @@ defmodule BuildPipeline.ConfigFile do
   end
 
   defp build_build_step(build_step) do
-    Enum.reduce_while(@build_step_keys, %{}, fn {build_step_key, json_name}, acc ->
-      case Map.get(build_step, json_name) do
-        nil ->
-          {:halt,
-           {:error,
-            "I failed to parse the build_pipeline_config because a build step was missing the key '#{json_name}'"}}
+    parsed_build_step = %{
+      build_step_name: Map.get(build_step, "buildStepName"),
+      command: Map.get(build_step, "command"),
+      depends_on: Map.get(build_step, "dependsOn"),
+      command_type: Map.get(build_step, "commandType")
+    }
 
-        payload ->
-          {:cont, Map.put(acc, build_step_key, payload)}
+    parsed_build_step
+    |> Enum.reduce_while({:ok, parsed_build_step}, fn
+      {build_step_key, nil}, _ ->
+        {:halt,
+         {:error,
+          "I failed to parse the build_pipeline_config because a build step was missing the key '#{Map.fetch!(@build_step_keys, build_step_key)}'"}}
+
+      {_build_step_key, _}, _ ->
+        {:cont, {:ok, parsed_build_step}}
+    end)
+    |> Result.and_then(fn %{depends_on: depends_on} = parsed_build_step ->
+      if is_list(depends_on) do
+        Map.put(parsed_build_step, :depends_on, MapSet.new(depends_on))
+      else
+        {:error,
+         "I failed to parse the build_pipeline_config because a build step had a non-list dependsOn of '#{depends_on}'"}
       end
     end)
   end

@@ -4,13 +4,25 @@ defmodule BuildPipelineTest do
   alias BuildPipeline
 
   describe "main" do
-    # TODO test what to do in each error case
+    # TODO test what to do in each error case (in preflight checks htat is)
     test "runs commands for a simple working case" do
-      capture_io(fn ->
-        assert {:ok, _pid} =
-                 BuildPipeline.main(["--cwd", "./test/example_projects/simple_and_functioning"])
-      end)
-      |> IO.inspect()
+      output =
+        capture_io(fn ->
+          assert :ok ==
+                   BuildPipeline.main(["--cwd", "./test/example_projects/complex_yet_functioning"])
+        end)
+
+      assert output =~ "tires"
+      assert output =~ "fuel"
+      assert output =~ "car works"
+      assert output =~ "drive"
+      assert output =~ "walk over"
+      assert output =~ "hello"
+    end
+
+    test "x" do
+      assert :ok ==
+               BuildPipeline.main(["--cwd", "./test/example_projects/complex_yet_functioning"])
     end
   end
 end

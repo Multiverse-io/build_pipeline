@@ -28,7 +28,7 @@ defmodule BuildPipeline.ConfigFileTest do
                 %{
                   build_step_name: "sayHello",
                   command: "echo 'hello'",
-                  depends_on: [],
+                  depends_on: MapSet.new([]),
                   command_type: :shell_command
                 }
               ]} == ConfigFile.parse_and_validate(@simple_example_json)
@@ -51,37 +51,37 @@ defmodule BuildPipeline.ConfigFileTest do
                 %{
                   build_step_name: "tiresNotSlashed",
                   command: "echo 'tires'",
-                  depends_on: [],
+                  depends_on: MapSet.new([]),
                   command_type: :shell_command
                 },
                 %{
                   build_step_name: "enoughFuel",
                   command: "echo 'fuel'",
-                  depends_on: [],
+                  depends_on: MapSet.new([]),
                   command_type: :shell_command
                 },
                 %{
                   build_step_name: "carWorks",
                   command: "echo 'car works'",
-                  depends_on: ["tiresNotSlashed", "enoughFuel"],
+                  depends_on: MapSet.new(["tiresNotSlashed", "enoughFuel"]),
                   command_type: :shell_command
                 },
                 %{
                   build_step_name: "driveToOffice",
                   command: "echo 'drive'",
-                  depends_on: ["carWorks"],
+                  depends_on: MapSet.new(["carWorks"]),
                   command_type: :shell_command
                 },
                 %{
                   build_step_name: "approachHuman",
                   command: "echo 'walk over'",
-                  depends_on: ["driveToOffice"],
+                  depends_on: MapSet.new(["driveToOffice"]),
                   command_type: :shell_command
                 },
                 %{
                   build_step_name: "sayHello",
                   command: "echo 'hello'",
-                  depends_on: ["approachHuman"],
+                  depends_on: MapSet.new(["approachHuman"]),
                   command_type: :shell_command
                 }
               ]} == ConfigFile.parse_and_validate(json)
@@ -114,6 +114,16 @@ defmodule BuildPipeline.ConfigFileTest do
       assert {:error,
               {:invalid_config,
                "I failed to parse the build_pipeline_config because the build step named 'sayHello' has a 'dependsOn' build step name that was not found"}} ==
+               ConfigFile.parse_and_validate(missing_key)
+    end
+
+    test "dependsOn must be a list" do
+      missing_key =
+        "[\n  {\"buildStepName\": \"sayHello\", \"commandType\": \"shellCommand\", \"command\": \"echo 'hello'\", \"dependsOn\": \"ass\"}\n]\n"
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because a build step had a non-list dependsOn of 'ass'"}} ==
                ConfigFile.parse_and_validate(missing_key)
     end
   end
