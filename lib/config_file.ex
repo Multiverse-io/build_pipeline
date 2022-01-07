@@ -13,19 +13,21 @@ defmodule BuildPipeline.ConfigFile do
   }
 
   # TODO add test to assert all build_step_name's are unique
-  def read(%{cwd: cwd}) do
+  # TODO add test to assert all build_step_name dependsOn exist
+  def read(%{cwd: cwd} = setup) do
     file_location = "#{cwd}/build_pipeline_config.json"
 
     case File.read(file_location) do
-      {:ok, config_file_contents} -> {:ok, config_file_contents}
+      {:ok, config_file_contents} -> {:ok, {config_file_contents, setup}}
       _ -> {:error, {:config_file_not_found, file_location}}
     end
   end
 
-  def parse_and_validate(config_file_contents) do
+  def parse_and_validate({config_file_contents, setup}) do
     config_file_contents
     |> Jason.decode()
     |> Result.and_then(&build_build_pipeline_tree/1)
+    |> Result.and_then(&{:ok, %{build_pipeline: &1, setup: setup}})
   end
 
   defp build_build_pipeline_tree(json) do

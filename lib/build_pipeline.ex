@@ -21,7 +21,7 @@ defmodule BuildPipeline do
   defp run_if_preflight_checks_passed({:ok, setup}) do
     children = [Server.child_spec(setup, self())]
 
-    {:ok, supervisor_pid} = Supervisor.start_link(children, strategy: :one_for_one)
+    {:ok, _supervisor_pid} = Supervisor.start_link(children, strategy: :one_for_one)
 
     receive do
       :server_done -> :ok

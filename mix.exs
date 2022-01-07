@@ -16,7 +16,7 @@ defmodule BuildPipeline.MixProject do
   end
 
   defp elixirc_paths(:test) do
-    ["lib"]
+    ["lib", "test/builders"]
   end
 
   defp elixirc_paths(_) do

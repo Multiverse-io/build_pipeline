@@ -2,13 +2,13 @@ defmodule BuildPipeline.BuildStepRunner do
   use GenServer
   alias BuildPipeline.ShellCommandRunner
 
-  def start_link({build_step, server_pid}) do
-    GenServer.start_link(__MODULE__, {build_step, server_pid})
+  def start_link(build_step, server_pid, opts \\ []) do
+    GenServer.start_link(__MODULE__, {build_step, server_pid, opts})
   end
 
   @impl true
-  def init({build_step, server_pid}) do
-    {:ok, %{build_step: build_step, status: :waiting, server_pid: server_pid}}
+  def init({build_step, server_pid, opts}) do
+    {:ok, %{build_step: build_step, status: :waiting, server_pid: server_pid, opts: opts}}
   end
 
   @impl true
@@ -50,7 +50,9 @@ defmodule BuildPipeline.BuildStepRunner do
   end
 
   defp run_shell_command(command, state) do
-    {output, exit_code} = ShellCommandRunner.run(command, write_as_you_go: true)
+    print_cmd_output = Keyword.get(state.opts, :print_cmd_output, false)
+
+    {output, exit_code} = ShellCommandRunner.run(command, print_cmd_output: print_cmd_output)
     result = %{output: output, exit_code: exit_code}
 
     state =

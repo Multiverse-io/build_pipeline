@@ -4,23 +4,32 @@ defmodule BuildPipeline.Server do
 
   @default_genserver_options []
 
-  def child_spec(pipeline_tree, parent_pid, genserver_options \\ @default_genserver_options) do
+  def child_spec(setup, parent_pid, genserver_options \\ @default_genserver_options) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [{pipeline_tree, parent_pid}, genserver_options]}
+      start: {__MODULE__, :start_link, [{setup, parent_pid}, genserver_options]}
     }
   end
 
-  def start_link({pipeline_tree, parent_pid}, genserver_options \\ @default_genserver_options) do
-    GenServer.start_link(__MODULE__, {pipeline_tree, parent_pid}, genserver_options)
+  def start_link({setup, parent_pid}, genserver_options \\ @default_genserver_options) do
+    GenServer.start_link(__MODULE__, {setup, parent_pid}, genserver_options)
   end
 
   @impl true
-  def init({pipeline_tree, parent_pid}) do
-    start_runners()
-    runners = init_waiting_runners(pipeline_tree)
+  def init({setup, parent_pid}) do
+    %{build_pipeline: build_pipeline, setup: setup} = setup
+    print_cmd_output = setup.print_cmd_output
 
-    {:ok, %{runners: runners, completed_runners: MapSet.new([]), parent_pid: parent_pid}}
+    start_runners()
+    runners = init_waiting_runners(build_pipeline, print_cmd_output)
+
+    {:ok,
+     %{
+       runners: runners,
+       completed_runners: MapSet.new([]),
+       parent_pid: parent_pid,
+       print_cmd_output: print_cmd_output
+     }}
   end
 
   @impl true
@@ -83,9 +92,11 @@ defmodule BuildPipeline.Server do
     spawn_link(fn -> GenServer.call(server_pid, :start_runners) end)
   end
 
-  defp init_waiting_runners(pipeline_tree) do
-    Enum.reduce(pipeline_tree, %{}, fn build_step, runners ->
-      {:ok, runner_pid} = BuildStepRunner.start_link({build_step, self()})
+  defp init_waiting_runners(build_pipeline, print_cmd_output) do
+    Enum.reduce(build_pipeline, %{}, fn build_step, runners ->
+      {:ok, runner_pid} =
+        BuildStepRunner.start_link(build_step, self(), print_cmd_output: print_cmd_output)
+
       Map.put(runners, runner_pid, build_step)
     end)
   end

@@ -4,10 +4,12 @@ defmodule BuildPipeline.ConfigFileTest do
 
   @simple_example_dir "./test/example_projects/simple_and_functioning"
   @simple_example_json File.read!("#{@simple_example_dir}/build_pipeline_config.json")
+  @setup %{cwd: ".", print_cmd_output: false}
 
   describe "read" do
     test "returns ok with the file's contents if it's there and readabe" do
-      assert {:ok, file_contents} = ConfigFile.read(%{cwd: @simple_example_dir})
+      setup = %{cwd: @simple_example_dir, print_cmd_output: false}
+      assert {:ok, {file_contents, ^setup}} = ConfigFile.read(setup)
 
       assert file_contents == @simple_example_json
     end
@@ -23,15 +25,17 @@ defmodule BuildPipeline.ConfigFileTest do
 
   describe "parse_and_validate/1" do
     test "when valid, returns the build pipeline tree" do
-      assert {:ok,
-              [
-                %{
-                  build_step_name: "sayHello",
-                  command: "echo 'hello'",
-                  depends_on: MapSet.new([]),
-                  command_type: :shell_command
-                }
-              ]} == ConfigFile.parse_and_validate(@simple_example_json)
+      assert {:ok, %{build_pipeline: build_pipeline}} =
+               ConfigFile.parse_and_validate({@simple_example_json, @setup})
+
+      assert build_pipeline == [
+               %{
+                 build_step_name: "sayHello",
+                 command: "echo 'hello'",
+                 depends_on: MapSet.new([]),
+                 command_type: :shell_command
+               }
+             ]
     end
 
     test "when valid, but more complex, retuns the build pipeline tree" do
@@ -46,45 +50,47 @@ defmodule BuildPipeline.ConfigFileTest do
       ]
       """
 
-      assert {:ok,
-              [
-                %{
-                  build_step_name: "tiresNotSlashed",
-                  command: "echo 'tires'",
-                  depends_on: MapSet.new([]),
-                  command_type: :shell_command
-                },
-                %{
-                  build_step_name: "enoughFuel",
-                  command: "echo 'fuel'",
-                  depends_on: MapSet.new([]),
-                  command_type: :shell_command
-                },
-                %{
-                  build_step_name: "carWorks",
-                  command: "echo 'car works'",
-                  depends_on: MapSet.new(["tiresNotSlashed", "enoughFuel"]),
-                  command_type: :shell_command
-                },
-                %{
-                  build_step_name: "driveToOffice",
-                  command: "echo 'drive'",
-                  depends_on: MapSet.new(["carWorks"]),
-                  command_type: :shell_command
-                },
-                %{
-                  build_step_name: "approachHuman",
-                  command: "echo 'walk over'",
-                  depends_on: MapSet.new(["driveToOffice"]),
-                  command_type: :shell_command
-                },
-                %{
-                  build_step_name: "sayHello",
-                  command: "echo 'hello'",
-                  depends_on: MapSet.new(["approachHuman"]),
-                  command_type: :shell_command
-                }
-              ]} == ConfigFile.parse_and_validate(json)
+      assert {:ok, %{build_pipeline: build_pipeline}} =
+               ConfigFile.parse_and_validate({json, @setup})
+
+      assert build_pipeline == [
+               %{
+                 build_step_name: "tiresNotSlashed",
+                 command: "echo 'tires'",
+                 depends_on: MapSet.new([]),
+                 command_type: :shell_command
+               },
+               %{
+                 build_step_name: "enoughFuel",
+                 command: "echo 'fuel'",
+                 depends_on: MapSet.new([]),
+                 command_type: :shell_command
+               },
+               %{
+                 build_step_name: "carWorks",
+                 command: "echo 'car works'",
+                 depends_on: MapSet.new(["tiresNotSlashed", "enoughFuel"]),
+                 command_type: :shell_command
+               },
+               %{
+                 build_step_name: "driveToOffice",
+                 command: "echo 'drive'",
+                 depends_on: MapSet.new(["carWorks"]),
+                 command_type: :shell_command
+               },
+               %{
+                 build_step_name: "approachHuman",
+                 command: "echo 'walk over'",
+                 depends_on: MapSet.new(["driveToOffice"]),
+                 command_type: :shell_command
+               },
+               %{
+                 build_step_name: "sayHello",
+                 command: "echo 'hello'",
+                 depends_on: MapSet.new(["approachHuman"]),
+                 command_type: :shell_command
+               }
+             ]
     end
 
     test "when a key is missing, returns error" do
@@ -94,7 +100,7 @@ defmodule BuildPipeline.ConfigFileTest do
       assert {:error,
               {:invalid_config,
                "I failed to parse the build_pipeline_config because a build step was missing the key 'buildStepName'"}} ==
-               ConfigFile.parse_and_validate(missing_key)
+               ConfigFile.parse_and_validate({missing_key, @setup})
     end
 
     test "when a command_type is not valid, returns error" do
@@ -104,7 +110,7 @@ defmodule BuildPipeline.ConfigFileTest do
       assert {:error,
               {:invalid_config,
                "I failed to parse the build_pipeline_config because a build step had an invalid commandType of 'NONSENSE'"}} ==
-               ConfigFile.parse_and_validate(missing_key)
+               ConfigFile.parse_and_validate({missing_key, @setup})
     end
 
     test "when a dependsOn is missing, returns error" do
@@ -114,7 +120,7 @@ defmodule BuildPipeline.ConfigFileTest do
       assert {:error,
               {:invalid_config,
                "I failed to parse the build_pipeline_config because the build step named 'sayHello' has a 'dependsOn' build step name that was not found"}} ==
-               ConfigFile.parse_and_validate(missing_key)
+               ConfigFile.parse_and_validate({missing_key, @setup})
     end
 
     test "dependsOn must be a list" do
@@ -124,7 +130,7 @@ defmodule BuildPipeline.ConfigFileTest do
       assert {:error,
               {:invalid_config,
                "I failed to parse the build_pipeline_config because a build step had a non-list dependsOn of 'ass'"}} ==
-               ConfigFile.parse_and_validate(missing_key)
+               ConfigFile.parse_and_validate({missing_key, @setup})
     end
   end
 end

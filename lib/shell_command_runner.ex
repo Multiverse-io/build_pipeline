@@ -2,13 +2,11 @@ defmodule BuildPipeline.ShellCommandRunner do
   use GenServer
 
   def run(command, opts \\ []) do
-    write_as_you_go = Keyword.get(opts, :write_as_you_go, true)
-
     {:ok, _pid} =
       GenServer.start_link(__MODULE__, %{
         command: command,
         caller_pid: self(),
-        write_as_you_go: write_as_you_go
+        write_as_you_go: Keyword.fetch!(opts, :print_cmd_output)
       })
 
     receive do
