@@ -32,8 +32,9 @@ defmodule BuildPipeline.ConfigFile do
 
   defp build_build_pipeline_tree(json) do
     json
-    |> Enum.reduce_while({:ok, []}, fn action, {:ok, tree} ->
-      case build_build_step(action) do
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, []}, fn {action, order}, {:ok, tree} ->
+      case build_build_step(action, order) do
         {:error, error} -> {:halt, {:error, {:invalid_config, error}}}
         build_step -> {:cont, {:ok, [build_step | tree]}}
       end
@@ -61,12 +62,13 @@ defmodule BuildPipeline.ConfigFile do
     end
   end
 
-  defp build_build_step(build_step) do
+  defp build_build_step(build_step, order) do
     parsed_build_step = %{
       build_step_name: Map.get(build_step, "buildStepName"),
       command: Map.get(build_step, "command"),
       depends_on: Map.get(build_step, "dependsOn"),
-      command_type: Map.get(build_step, "commandType")
+      command_type: Map.get(build_step, "commandType"),
+      order: order
     }
 
     parsed_build_step

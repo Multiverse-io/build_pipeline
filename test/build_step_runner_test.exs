@@ -30,6 +30,7 @@ defmodule BuildPipeline.BuildStepRunnerTest do
 
     test "runs if it depends_on one thing that's done" do
       assert_step_ran_to_completion(["dependentStep"], ["dependentStep"], true)
+      assert_step_ran_to_completion(["dependentStep"], ["dependentStep", "otherStep"], true)
     end
 
     test "does not run if it depends_on one thing that is not done" do

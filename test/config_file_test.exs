@@ -33,7 +33,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  build_step_name: "sayHello",
                  command: "echo 'hello'",
                  depends_on: MapSet.new([]),
-                 command_type: :shell_command
+                 command_type: :shell_command,
+                 order: 0
                }
              ]
     end
@@ -58,37 +59,43 @@ defmodule BuildPipeline.ConfigFileTest do
                  build_step_name: "tiresNotSlashed",
                  command: "echo 'tires'",
                  depends_on: MapSet.new([]),
-                 command_type: :shell_command
+                 command_type: :shell_command,
+                 order: 0
                },
                %{
                  build_step_name: "enoughFuel",
                  command: "echo 'fuel'",
                  depends_on: MapSet.new([]),
-                 command_type: :shell_command
+                 command_type: :shell_command,
+                 order: 1
                },
                %{
                  build_step_name: "carWorks",
                  command: "echo 'car works'",
                  depends_on: MapSet.new(["tiresNotSlashed", "enoughFuel"]),
-                 command_type: :shell_command
+                 command_type: :shell_command,
+                 order: 2
                },
                %{
                  build_step_name: "driveToOffice",
                  command: "echo 'drive'",
                  depends_on: MapSet.new(["carWorks"]),
-                 command_type: :shell_command
+                 command_type: :shell_command,
+                 order: 3
                },
                %{
                  build_step_name: "approachHuman",
                  command: "echo 'walk over'",
                  depends_on: MapSet.new(["driveToOffice"]),
-                 command_type: :shell_command
+                 command_type: :shell_command,
+                 order: 4
                },
                %{
                  build_step_name: "sayHello",
                  command: "echo 'hello'",
                  depends_on: MapSet.new(["approachHuman"]),
-                 command_type: :shell_command
+                 command_type: :shell_command,
+                 order: 5
                }
              ]
     end
