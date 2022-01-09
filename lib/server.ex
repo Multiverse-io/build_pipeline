@@ -40,7 +40,9 @@ defmodule BuildPipeline.Server do
   end
 
   # TODO prevent circular references in the JSON
-  # TODO turn this into mix commands: mix build_pipeline.init (creates the foldder structure and a dummy JSON file), mix build_pipline.run (actually runs it), release it on hex and maybe make it work stand alone as a binary with with mix releases?
+  # TODO release to hex
+  # TODO verbose mode (runs everything serially & outputs std_out and std_error live)
+  # TODO show in the runner_output lines that runners have been aborted if any have failed
   def handle_cast({:runner_finished, runner_pid, result}, state) do
     state
     |> update_completed_runners(runner_pid, result)
@@ -160,10 +162,24 @@ defmodule BuildPipeline.Server do
         command = state[:runners][runner_pid][:command]
         message = "#{ANSI.red()}#{command} [Failed]#{ANSI.reset()}"
 
-        output_lines = put_on_runner_output_line(state.output_lines, runner_pid, message)
+        output_lines =
+          state.output_lines
+          |> put_on_runner_output_line(runner_pid, message)
+          |> put_aborted_for_incomplete_runners_msg(state.runners)
 
         {:stop, :normal, %{state | output_lines: output_lines}}
     end
+  end
+
+  defp put_aborted_for_incomplete_runners_msg(output_lines, runners) do
+    Enum.reduce(runners, output_lines, fn
+      {_runner_pid, %{status: :complete}}, acc ->
+        acc
+
+      {runner_pid, %{command: command}}, acc ->
+        message = "#{ANSI.magenta()}#{ANSI.crossed_out()}#{command} [Aborted]#{ANSI.reset()}"
+        put_on_runner_output_line(acc, runner_pid, message)
+    end)
   end
 
   defp finished_if_all_runners_done(state) do
