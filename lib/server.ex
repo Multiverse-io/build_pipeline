@@ -1,6 +1,7 @@
 defmodule BuildPipeline.Server do
   use GenServer
   alias BuildPipeline.BuildStepRunner
+  alias IO.ANSI
 
   @default_genserver_options []
 
@@ -28,27 +29,79 @@ defmodule BuildPipeline.Server do
      %{
        runners: runners,
        parent_pid: parent_pid,
-       print_cmd_output: print_cmd_output
+       print_cmd_output: print_cmd_output,
+       output_lines: put_pending_runners(runners)
      }}
   end
 
   @impl true
-  def handle_call(:start_runners, _from, state) do
+  def handle_cast(:start_runners, state) do
     start_runners_if_able(state)
     {:noreply, state}
   end
 
-  # TODO in case of any success: print success on screen with timings
-  @impl true
+  # TODO prevent circular references in the JSON
+  # TODO turn this into mix commands: mix build_pipeline.init (creates the foldder structure and a dummy JSON file), mix build_pipline.run (actually runs it), release it on hex and maybe make it work stand alone as a binary with with mix releases?
   def handle_cast({:runner_finished, runner_pid, result}, state) do
     state
     |> update_completed_runners(runner_pid, result)
     |> continue_unless_step_failed(runner_pid)
   end
 
+  # https://stackoverflow.com/questions/11283625/overwrite-last-line-on-terminal
+  def handle_cast({:runner_starting, runner_pid}, state) do
+    command = state[:runners][runner_pid][:command]
+    message = "#{ANSI.magenta()}#{command} [Running]#{ANSI.reset()}"
+
+    output_lines = put_on_runner_output_line(state.output_lines, runner_pid, message)
+
+    {:noreply, %{state | output_lines: output_lines}}
+  end
+
   @impl true
   def terminate(:normal, %{parent_pid: parent_pid} = state) do
     send(parent_pid, {:server_done, parse_result(state)})
+  end
+
+  defp put_pending_runners(runners) do
+    runners
+    |> Enum.map(fn {pid, build_step} -> {pid, build_step} end)
+    |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
+    |> Map.new(fn {pid, %{order: order, command: command}} ->
+      line_number = order + 1
+
+      message = "#{ANSI.light_magenta()}#{command} [Pending]#{ANSI.reset()}"
+
+      if should_print_runner_output?() do
+        IO.puts(message)
+      end
+
+      {pid, %{line_number: line_number, content: message}}
+    end)
+  end
+
+  defp put_on_runner_output_line(output_lines, runner_pid, message) do
+    %{line_number: line_number} = Map.fetch!(output_lines, runner_pid)
+
+    max_lines =
+      Enum.reduce(output_lines, 0, fn {_pid, %{line_number: line_number}}, acc ->
+        if line_number >= acc do
+          line_number
+        else
+          acc
+        end
+      end)
+
+    line_shift = max_lines - line_number + 1
+
+    if should_print_runner_output?() do
+      IO.write(
+        "\r#{ANSI.cursor_up(line_shift)}\r#{ANSI.clear_line()}#{message}#{ANSI.cursor_down(line_shift)}\r"
+      )
+    end
+
+    output_line = %{line_number: line_number, content: message}
+    Map.put(output_lines, runner_pid, output_line)
   end
 
   defp parse_result(%{runners: runners}) do
@@ -79,13 +132,38 @@ defmodule BuildPipeline.Server do
 
   defp continue_unless_step_failed(state, runner_pid) do
     case Map.fetch!(state.runners, runner_pid) do
-      %{exit_code: 0} ->
-        state
+      %{exit_code: 0, duration_in_microseconds: duration_in_microseconds} ->
+        duration =
+          cond do
+            duration_in_microseconds < 1000 ->
+              "#{duration_in_microseconds} μs"
+
+            duration_in_microseconds < 1_000_000 ->
+              "#{duration_in_microseconds / 1000} ms"
+
+            duration_in_microseconds < 60_000_000 ->
+              "#{duration_in_microseconds / 1_000_000} s"
+
+            true ->
+              "#{duration_in_microseconds / 60_000_000} min"
+          end
+
+        command = state[:runners][runner_pid][:command]
+        message = "#{ANSI.green()}#{command} [Finished in #{duration}] ✔ #{ANSI.reset()}"
+
+        output_lines = put_on_runner_output_line(state.output_lines, runner_pid, message)
+
+        %{state | output_lines: output_lines}
         |> start_runners_if_able()
         |> finished_if_all_runners_done()
 
       %{exit_code: _non_zero} ->
-        {:stop, :normal, state}
+        command = state[:runners][runner_pid][:command]
+        message = "#{ANSI.red()}#{command} [Failed]#{ANSI.reset()}"
+
+        output_lines = put_on_runner_output_line(state.output_lines, runner_pid, message)
+
+        {:stop, :normal, %{state | output_lines: output_lines}}
     end
   end
 
@@ -125,7 +203,7 @@ defmodule BuildPipeline.Server do
 
   defp start_runners do
     server_pid = self()
-    spawn_link(fn -> GenServer.call(server_pid, :start_runners) end)
+    spawn_link(fn -> GenServer.cast(server_pid, :start_runners) end)
   end
 
   defp init_waiting_runners(build_pipeline, print_cmd_output) do
@@ -136,5 +214,9 @@ defmodule BuildPipeline.Server do
       build_step = Map.put(build_step, :status, :incomplete)
       Map.put(runners, runner_pid, build_step)
     end)
+  end
+
+  defp should_print_runner_output? do
+    Application.get_env(:build_pipeline, :print_runner_output)
   end
 end

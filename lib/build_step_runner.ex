@@ -52,8 +52,12 @@ defmodule BuildPipeline.BuildStepRunner do
   defp run_shell_command(command, state) do
     print_cmd_output = Keyword.get(state.opts, :print_cmd_output, false)
 
+    GenServer.cast(state.server_pid, {:runner_starting, self()})
+    start_time = DateTime.utc_now()
     {output, exit_code} = ShellCommandRunner.run(command, print_cmd_output: print_cmd_output)
-    result = %{output: output, exit_code: exit_code}
+    end_time = DateTime.utc_now()
+    duration = DateTime.diff(end_time, start_time, :microsecond)
+    result = %{output: output, exit_code: exit_code, duration_in_microseconds: duration}
 
     state =
       state
