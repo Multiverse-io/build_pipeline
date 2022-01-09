@@ -24,3 +24,5 @@ build_pipeline-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+/test_output/

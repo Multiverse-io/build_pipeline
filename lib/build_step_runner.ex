@@ -32,8 +32,14 @@ defmodule BuildPipeline.BuildStepRunner do
 
   def handle_cast(:run, state) do
     case state do
-      %{build_step: %{command_type: :shell_command, command: command}} ->
-        run_shell_command(command, state)
+      %{
+        build_step: %{
+          command_type: :shell_command,
+          command: command,
+          command_env_vars: command_env_vars
+        }
+      } ->
+        run_shell_command(command, command_env_vars, state)
 
       state ->
         {:noreply, state}
@@ -49,12 +55,15 @@ defmodule BuildPipeline.BuildStepRunner do
     GenServer.cast(state.server_pid, {:runner_finished, self(), state.result})
   end
 
-  defp run_shell_command(command, state) do
+  defp run_shell_command(command, command_env_vars, state) do
     print_cmd_output = Keyword.get(state.opts, :print_cmd_output, false)
 
     GenServer.cast(state.server_pid, {:runner_starting, self()})
     start_time = DateTime.utc_now()
-    {output, exit_code} = ShellCommandRunner.run(command, print_cmd_output: print_cmd_output)
+
+    {output, exit_code} =
+      ShellCommandRunner.run(command, command_env_vars, print_cmd_output: print_cmd_output)
+
     end_time = DateTime.utc_now()
     duration = DateTime.diff(end_time, start_time, :microsecond)
     result = %{output: output, exit_code: exit_code, duration_in_microseconds: duration}

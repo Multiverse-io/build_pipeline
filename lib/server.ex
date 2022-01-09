@@ -8,7 +8,8 @@ defmodule BuildPipeline.Server do
   def child_spec(setup, parent_pid, genserver_options \\ @default_genserver_options) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [{setup, parent_pid}, genserver_options]}
+      start: {__MODULE__, :start_link, [{setup, parent_pid}, genserver_options]},
+      restart: :temporary
     }
   end
 
@@ -18,10 +19,9 @@ defmodule BuildPipeline.Server do
 
   @impl true
   def init({setup, parent_pid}) do
-    %{build_pipeline: build_pipeline, setup: setup} = setup
-    print_cmd_output = setup.print_cmd_output
+    %{build_pipeline: build_pipeline} = setup
 
-    runners = init_waiting_runners(build_pipeline, print_cmd_output)
+    runners = init_waiting_runners(build_pipeline)
 
     start_runners()
 
@@ -29,7 +29,6 @@ defmodule BuildPipeline.Server do
      %{
        runners: runners,
        parent_pid: parent_pid,
-       print_cmd_output: print_cmd_output,
        output_lines: put_pending_runners(runners)
      }}
   end
@@ -139,13 +138,13 @@ defmodule BuildPipeline.Server do
               "#{duration_in_microseconds} μs"
 
             duration_in_microseconds < 1_000_000 ->
-              "#{duration_in_microseconds / 1000} ms"
+              "#{round(duration_in_microseconds / 1000)} ms"
 
             duration_in_microseconds < 60_000_000 ->
-              "#{duration_in_microseconds / 1_000_000} s"
+              "#{Float.round(duration_in_microseconds / 1_000_000, 1)} s"
 
             true ->
-              "#{duration_in_microseconds / 60_000_000} min"
+              "#{round(duration_in_microseconds / 60_000_000)} min"
           end
 
         command = state[:runners][runner_pid][:command]
@@ -206,10 +205,9 @@ defmodule BuildPipeline.Server do
     spawn_link(fn -> GenServer.cast(server_pid, :start_runners) end)
   end
 
-  defp init_waiting_runners(build_pipeline, print_cmd_output) do
+  defp init_waiting_runners(build_pipeline) do
     Enum.reduce(build_pipeline, %{}, fn build_step, runners ->
-      {:ok, runner_pid} =
-        BuildStepRunner.start_link(build_step, self(), print_cmd_output: print_cmd_output)
+      {:ok, runner_pid} = BuildStepRunner.start_link(build_step, self())
 
       build_step = Map.put(build_step, :status, :incomplete)
       Map.put(runners, runner_pid, build_step)

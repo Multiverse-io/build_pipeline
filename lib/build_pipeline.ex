@@ -24,7 +24,9 @@ defmodule BuildPipeline do
     {:ok, supervisor_pid} = Supervisor.start_link(children, strategy: :one_for_one)
 
     receive do
-      {:server_done, _result} -> Supervisor.stop(supervisor_pid)
+      {:server_done, result} ->
+        IO.inspect(result)
+        Supervisor.stop(supervisor_pid)
     end
   end
 

@@ -5,6 +5,7 @@ defmodule BuildPipeline.BuildStepBuilder do
     %{
       build_step_name: build_step_name,
       command: @noop_command_in_bash,
+      command_env_vars: [],
       command_type: :shell_command,
       depends_on: MapSet.new([])
     }

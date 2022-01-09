@@ -5,55 +5,23 @@ defmodule BuildPipelineTest do
 
   describe "main" do
     # TODO test what to do in each error case (in preflight checks htat is)
-    test "runs commands for a simple working case & prints command output if the flag is passed" do
-      output =
-        capture_io(fn ->
-          assert :ok ==
-                   BuildPipeline.main([
-                     "--cwd",
-                     "./test/example_projects/complex_yet_functioning",
-                     "--print-cmd-output"
-                   ])
-        end)
+    test "can show runner output on the screen" do
+      original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
-      assert output =~ "tires"
-      assert output =~ "fuel"
-      assert output =~ "car works"
-      assert output =~ "drive"
-      assert output =~ "walk over"
-      assert output =~ "hello"
-    end
+      Application.put_env(:build_pipeline, :print_runner_output, true)
 
-    test "does not print command output if print-cmd-output is not set" do
+      # assert :ok ==
+      #         BuildPipeline.main([
+      #           "--cwd",
+      #           "./test/example_projects/complex_yet_functioning"
+      #         ])
+
       output =
         capture_io(fn ->
           assert :ok ==
                    BuildPipeline.main([
                      "--cwd",
                      "./test/example_projects/complex_yet_functioning"
-                   ])
-        end)
-
-      refute output =~ "tires"
-      refute output =~ "fuel"
-      refute output =~ "car works"
-      refute output =~ "drive"
-      refute output =~ "walk over"
-      refute output =~ "hello"
-    end
-
-    test "can show runner output on the screen" do
-      original_env = Application.get_env(:build_pipeline, :print_runner_output)
-
-      Application.put_env(:build_pipeline, :print_runner_output, true)
-
-      output =
-        capture_io(fn ->
-          assert :ok ==
-                   BuildPipeline.main([
-                     "--cwd",
-                     "./test/example_projects/complex_yet_functioning",
-                     "--print-cmd-output"
                    ])
         end)
 

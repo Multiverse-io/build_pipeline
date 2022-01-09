@@ -1,5 +1,5 @@
 [
-  {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo tires", "dependsOn": []},
+  {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo tires", "dependsOn": [], "envVars": [{"name": "MIX_ENV", "value": "test"}]},
   {"buildStepName": "enoughFuel", "commandType": "shellCommand", "command": "echo fuel", "dependsOn": []},
   {"buildStepName": "carWorks", "commandType": "shellCommand", "command": "echo car works", "dependsOn": ["tiresNotSlashed", "enoughFuel"]},
   {"buildStepName": "driveToOffice", "commandType": "shellCommand", "command": "echo drive", "dependsOn": ["carWorks"]},

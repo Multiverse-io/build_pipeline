@@ -1,0 +1,5 @@
+[
+  {"buildStepName": "get dependencies", "commandType": "shellCommand", "command": "mix deps.get", "dependsOn": []},
+  {"buildStepName": "compile", "commandType": "shellCommand", "command": "mix compile --force --warnings-as-errors", "dependsOn": ["get dependencies"], "envVars": [{"name": "MIX_ENV", "value": "test"}]},
+  {"buildStepName": "test", "commandType": "shellCommand", "command": "mix test", "dependsOn": ["compile"]}
+]

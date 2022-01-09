@@ -1,10 +1,11 @@
 defmodule BuildPipeline.ShellCommandRunner do
   use GenServer
 
-  def run(command, opts \\ []) do
+  def run(command, env_vars, opts \\ []) do
     {:ok, _pid} =
       GenServer.start_link(__MODULE__, %{
         command: command,
+        env_vars: env_vars,
         caller_pid: self(),
         write_as_you_go: Keyword.fetch!(opts, :print_cmd_output)
       })
@@ -16,9 +17,20 @@ defmodule BuildPipeline.ShellCommandRunner do
 
   @impl true
   def init(state) do
-    port = Port.open({:spawn, state.command}, [:exit_status, :stderr_to_stdout])
+    #if state.command == "MIX_ENV=test mix compile --force --warnings-as-errors" do
+    #  port =
+    #    Port.open({:spawn, "mix compile --force --warnings-as-errors"}, [
+    #      {:env, [{'MIX_ENV', 'test'}]},
+    #      :exit_status,
+    #      :stderr_to_stdout
+    #    ])
 
-    {:ok, Map.merge(state, %{port: port, command_output: ""})}
+    #  {:ok, Map.merge(state, %{port: port, command_output: ""})}
+    #else
+      port = Port.open({:spawn, state.command}, [{:env, state.env_vars}, :exit_status, :stderr_to_stdout])
+
+      {:ok, Map.merge(state, %{port: port, command_output: ""})}
+    #end
   end
 
   @impl true

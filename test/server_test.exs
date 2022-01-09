@@ -13,6 +13,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "tiresNotSlashed",
                             command: "echo tires",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -24,6 +25,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "enoughFuel",
                             command: "echo fuel",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -35,6 +37,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "carWorks",
                             command: "echo car works",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -46,6 +49,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "driveToOffice",
                             command: "echo drive",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -57,6 +61,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "approachHuman",
                             command: "echo walk over",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -68,6 +73,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "sayHello",
                             command: "echo hello",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -93,6 +99,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "tiresNotSlashed",
                             command: "echo tires",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -104,6 +111,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "enoughFuel",
                             command: "echo fuel",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -115,6 +123,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "carWorks",
                             command: "echo car works",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 0,
@@ -126,6 +135,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "driveToOffice",
                             command: "notARealCommand",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             exit_code: 127,
@@ -137,6 +147,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "approachHuman",
                             command: "echo walk over",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             order: 4,
@@ -145,6 +156,7 @@ defmodule BuildPipeline.ServerTest do
                           %{
                             build_step_name: "sayHello",
                             command: "echo hello",
+                            command_env_vars: [],
                             command_type: :shell_command,
                             depends_on: _,
                             order: 5,
@@ -164,6 +176,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "tiresNotSlashed",
           command: "echo tires",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(),
           order: 0
@@ -171,6 +184,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "enoughFuel",
           command: "echo fuel",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(),
           order: 1
@@ -178,6 +192,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "carWorks",
           command: "echo car works",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["enoughFuel", "tiresNotSlashed"]),
           order: 2
@@ -185,6 +200,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "driveToOffice",
           command: "echo drive",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["carWorks"]),
           order: 3
@@ -192,6 +208,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "approachHuman",
           command: "echo walk over",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["driveToOffice"]),
           order: 4
@@ -199,6 +216,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "sayHello",
           command: "echo hello",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["approachHuman"]),
           order: 5
@@ -217,6 +235,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "tiresNotSlashed",
           command: "echo tires",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(),
           order: 0
@@ -224,6 +243,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "enoughFuel",
           command: "echo fuel",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(),
           order: 1
@@ -231,6 +251,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "carWorks",
           command: "echo car works",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["enoughFuel", "tiresNotSlashed"]),
           order: 2
@@ -238,6 +259,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "driveToOffice",
           command: ~s|notARealCommand|,
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["carWorks"]),
           order: 3
@@ -245,6 +267,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "approachHuman",
           command: "echo walk over",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["driveToOffice"]),
           order: 4
@@ -252,6 +275,7 @@ defmodule BuildPipeline.ServerTest do
         %{
           build_step_name: "sayHello",
           command: "echo hello",
+          command_env_vars: [],
           command_type: :shell_command,
           depends_on: MapSet.new(["approachHuman"]),
           order: 5
