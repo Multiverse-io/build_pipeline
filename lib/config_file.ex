@@ -1,13 +1,6 @@
 defmodule BuildPipeline.ConfigFile do
   alias BuildPipeline.Result
 
-  @build_step_keys %{
-    build_step_name: "buildStepName",
-    command: "command",
-    depends_on: "dependsOn",
-    command_type: "commandType"
-  }
-
   @command_types %{
     "shellCommand" => :shell_command
   }
@@ -36,7 +29,7 @@ defmodule BuildPipeline.ConfigFile do
     |> Enum.reduce_while({:ok, []}, fn {action, order}, {:ok, tree} ->
       case build_build_step(action, order) do
         {:error, error} -> {:halt, {:error, {:invalid_config, error}}}
-        build_step -> {:cont, {:ok, [build_step | tree]}}
+        {:ok, build_step} -> {:cont, {:ok, [build_step | tree]}}
       end
     end)
     |> Result.and_then(&validate_command_types/1)
@@ -62,48 +55,75 @@ defmodule BuildPipeline.ConfigFile do
     end
   end
 
-  defp build_build_step(build_step, order) do
-    parsed_build_step = %{
-      build_step_name: Map.get(build_step, "buildStepName"),
-      command: Map.get(build_step, "command"),
-      depends_on: Map.get(build_step, "dependsOn"),
-      command_type: Map.get(build_step, "commandType"),
-      order: order
-    }
+  @simple_steps [
+    {:build_step_name, "buildStepName"},
+    {:command, "command"},
+    {:command_type, "commandType"}
+  ]
 
-    case command_env_vars(build_step["envVars"]) do
-      {:ok, command_env_vars} ->
-        parsed_build_step = Map.put(parsed_build_step, :command_env_vars, command_env_vars)
+  defp build_build_step(json, order) do
+    initial_build_step = {:ok, %{order: order}}
 
-        parsed_build_step
-        |> Enum.reduce_while({:ok, parsed_build_step}, fn
-          {build_step_key, nil}, _ ->
-            {:halt,
-             {:error,
-              "I failed to parse the build_pipeline_config because a build step was missing the key '#{Map.fetch!(@build_step_keys, build_step_key)}'"}}
+    @simple_steps
+    |> Enum.reduce_while(initial_build_step, fn {step_key, json_key}, {:ok, build_step} ->
+      case add_simple_step(build_step, step_key, json_key, json) do
+        {:ok, build_step} ->
+          {:cont, {:ok, build_step}}
 
-          {_build_step_key, _}, _ ->
-            {:cont, {:ok, parsed_build_step}}
-        end)
-        |> Result.and_then(fn %{depends_on: depends_on} = parsed_build_step ->
-          if is_list(depends_on) do
-            Map.put(parsed_build_step, :depends_on, MapSet.new(depends_on))
-          else
-            {:error,
-             "I failed to parse the build_pipeline_config because a build step had a non-list dependsOn of '#{depends_on}'"}
-          end
-        end)
+        {:error, error} ->
+          {:halt, {:error, error}}
+      end
+    end)
+    |> Result.and_then(fn build_step -> add_command_env_vars(build_step, json) end)
+    |> Result.and_then(fn build_step -> add_depends_on(build_step, json) end)
+  end
+
+  defp add_command_env_vars(build_step, json) do
+    json
+    |> Map.get("envVars")
+    |> parse_command_env_vars()
+    |> case do
+      {:ok, env_vars} ->
+        {:ok, Map.put(build_step, :command_env_vars, env_vars)}
 
       {:error, error} ->
         {:error, error}
     end
   end
 
-  defp command_env_vars(nil) do
+  defp add_depends_on(build_step, json) do
+    json
+    |> Map.get("dependsOn")
+    |> case do
+      nil ->
+        {:error,
+         "I failed to parse the build_pipeline_config because a build step was missing the key 'dependsOn'"}
+
+      depends_on when is_list(depends_on) ->
+        {:ok, Map.put(build_step, :depends_on, MapSet.new(depends_on))}
+
+      depends_on ->
+        {:error,
+         "I failed to parse the build_pipeline_config because a build step had a non-list dependsOn of '#{depends_on}'"}
+    end
+  end
+
+  defp add_simple_step(build_step, step_key, json_key, json) do
+    case Map.get(json, json_key) do
+      nil ->
+        {:error,
+         "I failed to parse the build_pipeline_config because a build step was missing the key '#{json_key}'"}
+
+      build_step_value ->
+        {:ok, Map.put(build_step, step_key, build_step_value)}
+    end
+  end
+
+  defp parse_command_env_vars(nil) do
     {:ok, []}
   end
 
-  defp command_env_vars(command_env_vars) when is_list(command_env_vars) do
+  defp parse_command_env_vars(command_env_vars) when is_list(command_env_vars) do
     Enum.reduce_while(command_env_vars, {:ok, []}, fn
       %{"name" => env_var_name, "value" => env_var_value}, {:ok, acc} ->
         {:cont, {:ok, [{to_charlist(env_var_name), to_charlist(env_var_value)} | acc]}}
@@ -113,7 +133,7 @@ defmodule BuildPipeline.ConfigFile do
     end)
   end
 
-  defp command_env_vars(invalid) do
+  defp parse_command_env_vars(invalid) do
     {:error, command_env_vars_error_msg(invalid)}
   end
 
