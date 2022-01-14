@@ -19,7 +19,7 @@ defmodule BuildPipeline.Server do
 
   @impl true
   def init({setup, parent_pid}) do
-    %{build_pipeline: build_pipeline} = setup
+    %{build_pipeline: build_pipeline, setup: %{verbose: verbose}} = setup
 
     runners = init_waiting_runners(build_pipeline)
 
@@ -29,7 +29,8 @@ defmodule BuildPipeline.Server do
      %{
        runners: runners,
        parent_pid: parent_pid,
-       output_lines: put_pending_runners(runners)
+       output_lines: put_pending_runners(runners),
+       verbose: verbose
      }}
   end
 
@@ -39,14 +40,13 @@ defmodule BuildPipeline.Server do
     {:noreply, state}
   end
 
-  # TODO prevent circular references in the JSON
   # TODO release to hex
   # TODO verbose mode (runs everything serially & outputs std_out and std_error live)
   # TODO show in the runner_output lines that runners have been aborted if any have failed
   def handle_cast({:runner_finished, runner_pid, result}, state) do
     state
     |> update_completed_runners(runner_pid, result)
-    |> continue_unless_step_failed(runner_pid)
+    |> continue_unless_step_failed(runner_pid, result)
   end
 
   # https://stackoverflow.com/questions/11283625/overwrite-last-line-on-terminal
@@ -54,9 +54,7 @@ defmodule BuildPipeline.Server do
     command = state[:runners][runner_pid][:command]
     message = "#{ANSI.magenta()}#{command} [Running]#{ANSI.reset()}"
 
-    output_lines = put_on_runner_output_line(state.output_lines, runner_pid, message)
-
-    {:noreply, %{state | output_lines: output_lines}}
+    {:noreply, print_runner_message(state, runner_pid, message)}
   end
 
   @impl true
@@ -81,28 +79,38 @@ defmodule BuildPipeline.Server do
     end)
   end
 
-  defp put_on_runner_output_line(output_lines, runner_pid, message) do
-    %{line_number: line_number} = Map.fetch!(output_lines, runner_pid)
+  defp print_runner_message(state, runner_pid, message) do
+    %{line_number: line_number} = Map.fetch!(state.output_lines, runner_pid)
 
-    max_lines =
-      Enum.reduce(output_lines, 0, fn {_pid, %{line_number: line_number}}, acc ->
-        if line_number >= acc do
-          line_number
-        else
-          acc
-        end
-      end)
+    max_lines = max_runner_output_lines(state.output_lines)
 
     line_shift = max_lines - line_number + 1
 
     if should_print_runner_output?() do
-      IO.write(
-        "\r#{ANSI.cursor_up(line_shift)}\r#{ANSI.clear_line()}#{message}#{ANSI.cursor_down(line_shift)}\r"
-      )
+      message = wrap_message_in_curor_shift(state.verbose, line_shift, message)
+      IO.write(message)
     end
 
     output_line = %{line_number: line_number, content: message}
-    Map.put(output_lines, runner_pid, output_line)
+    %{state | output_lines: Map.put(state.output_lines, runner_pid, output_line)}
+  end
+
+  defp wrap_message_in_curor_shift(_verbose = false, line_shift, message) do
+    "\r#{ANSI.cursor_up(line_shift)}\r#{ANSI.clear_line()}#{message}#{ANSI.cursor_down(line_shift)}\r"
+  end
+
+  defp wrap_message_in_curor_shift(_verbose = true, _line_shift, message) do
+    message
+  end
+
+  defp max_runner_output_lines(output_lines) do
+    Enum.reduce(output_lines, 0, fn {_pid, %{line_number: line_number}}, acc ->
+      if line_number >= acc do
+        line_number
+      else
+        acc
+      end
+    end)
   end
 
   defp parse_result(%{runners: runners}) do
@@ -131,30 +139,16 @@ defmodule BuildPipeline.Server do
     %{state | runners: runners}
   end
 
-  defp continue_unless_step_failed(state, runner_pid) do
+  defp continue_unless_step_failed(state, runner_pid, result) do
     case Map.fetch!(state.runners, runner_pid) do
       %{exit_code: 0, duration_in_microseconds: duration_in_microseconds} ->
-        duration =
-          cond do
-            duration_in_microseconds < 1000 ->
-              "#{duration_in_microseconds} μs"
-
-            duration_in_microseconds < 1_000_000 ->
-              "#{round(duration_in_microseconds / 1000)} ms"
-
-            duration_in_microseconds < 60_000_000 ->
-              "#{Float.round(duration_in_microseconds / 1_000_000, 1)} s"
-
-            true ->
-              "#{round(duration_in_microseconds / 60_000_000)} min"
-          end
+        duration = duration_message(duration_in_microseconds)
 
         command = state[:runners][runner_pid][:command]
         message = "#{ANSI.green()}#{command} [Finished in #{duration}] ✔ #{ANSI.reset()}"
 
-        output_lines = put_on_runner_output_line(state.output_lines, runner_pid, message)
-
-        %{state | output_lines: output_lines}
+        state
+        |> print_runner_message(runner_pid, message)
         |> start_runners_if_able()
         |> finished_if_all_runners_done()
 
@@ -163,22 +157,40 @@ defmodule BuildPipeline.Server do
         message = "#{ANSI.red()}#{command} [Failed]#{ANSI.reset()}"
 
         output_lines =
-          state.output_lines
-          |> put_on_runner_output_line(runner_pid, message)
-          |> put_aborted_for_incomplete_runners_msg(state.runners)
+          state
+          |> print_runner_message(runner_pid, message)
+          |> put_aborted_for_incomplete_runners_msg()
+
+        IO.puts(result.output)
 
         {:stop, :normal, %{state | output_lines: output_lines}}
     end
   end
 
-  defp put_aborted_for_incomplete_runners_msg(output_lines, runners) do
-    Enum.reduce(runners, output_lines, fn
-      {_runner_pid, %{status: :complete}}, acc ->
-        acc
+  defp duration_message(duration_in_microseconds) do
+    cond do
+      duration_in_microseconds < 1000 ->
+        "#{duration_in_microseconds} μs"
 
-      {runner_pid, %{command: command}}, acc ->
+      duration_in_microseconds < 1_000_000 ->
+        "#{round(duration_in_microseconds / 1000)} ms"
+
+      duration_in_microseconds < 60_000_000 ->
+        "#{Float.round(duration_in_microseconds / 1_000_000, 1)} s"
+
+      true ->
+        "#{round(duration_in_microseconds / 60_000_000)} min"
+    end
+  end
+
+  defp put_aborted_for_incomplete_runners_msg(state) do
+    Enum.reduce(state.runners, state, fn
+      {_runner_pid, %{status: :complete}}, state ->
+        state
+
+      {runner_pid, %{command: command}}, state ->
         message = "#{ANSI.magenta()}#{ANSI.crossed_out()}#{command} [Aborted]#{ANSI.reset()}"
-        put_on_runner_output_line(acc, runner_pid, message)
+        print_runner_message(state, runner_pid, message)
     end)
   end
 

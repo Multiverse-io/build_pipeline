@@ -3,12 +3,13 @@ defmodule BuildPipeline.CommandLineArgumentsTest do
   alias BuildPipeline.CommandLineArguments
 
   @usage_instructions """
-  usage ./build_pipline [--cwd ./path/to/directory/to/use] [--print-cmd-output]
+  usage ./build_pipline [--cwd ./path/to/directory/to/use] [--print-cmd-output] [--verbose]
   """
 
   describe "parse/1" do
     test "with no args returns the default setup" do
-      assert {:ok, %{cwd: ".", print_cmd_output: false}} == CommandLineArguments.parse([])
+      assert {:ok, %{cwd: ".", print_cmd_output: false, verbose: false}} ==
+               CommandLineArguments.parse([])
     end
 
     test "with --cwd set, returns it" do
@@ -25,8 +26,8 @@ defmodule BuildPipeline.CommandLineArgumentsTest do
       assert {:ok, %{print_cmd_output: true}} = CommandLineArguments.parse(["--print-cmd-output"])
     end
 
-    test "without --print-cmd-output set, returns print_cmd_output false" do
-      assert {:ok, %{print_cmd_output: false}} = CommandLineArguments.parse([])
+    test "with --verbose set, sets it" do
+      assert {:ok, %{verbose: true}} = CommandLineArguments.parse(["--verbose"])
     end
   end
 end

@@ -25,7 +25,7 @@ defmodule BuildPipeline.ConfigFileTest do
   end
 
   describe "parse_and_validate/1" do
-    test "when valid, returns the build pipeline tree" do
+    test "when valid, returns the build pipeline" do
       assert {:ok, %{build_pipeline: build_pipeline}} =
                ConfigFile.parse_and_validate({@simple_example_json, @setup})
 
@@ -41,7 +41,7 @@ defmodule BuildPipeline.ConfigFileTest do
              ]
     end
 
-    test "when valid, but more complex, retuns the build pipeline tree" do
+    test "when valid, but more complex, retuns the build pipeline" do
       json = """
       [
         {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": []},
@@ -182,7 +182,7 @@ defmodule BuildPipeline.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because the build step named 'sayHello' has a 'dependsOn' build step name that was not found"}} ==
+               "I failed to parse the build_pipeline_config because a build step had a dependsOn of 'approachHuman' that does not exist"}} ==
                ConfigFile.parse_and_validate({missing_key, @setup})
     end
 
@@ -194,6 +194,159 @@ defmodule BuildPipeline.ConfigFileTest do
               {:invalid_config,
                "I failed to parse the build_pipeline_config because a build step had a non-list dependsOn of 'ass'"}} ==
                ConfigFile.parse_and_validate({missing_key, @setup})
+    end
+
+    test "no circular dependsOn references - simple case" do
+      json = """
+      [
+        {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["enoughFuel"]},
+        {"buildStepName": "enoughFuel", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["tiresNotSlashed"]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+  end
+
+  describe "no circular dependsOn references" do
+    test "simplest failure case" do
+      json = """
+      [
+        {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["enoughFuel"]},
+        {"buildStepName": "enoughFuel", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["tiresNotSlashed"]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "more nested case" do
+      json = """
+      [
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["C"]},
+        {"buildStepName": "B", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["D"]},
+        {"buildStepName": "C", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["A"]},
+        {"buildStepName": "D", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["B"]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "one depenecy is fine, but the other is bad" do
+      json = """
+      [
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["C", "B"]},
+        {"buildStepName": "B", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["A"]},
+        {"buildStepName": "C", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "two depeneces are fine, but the other is bad" do
+      json = """
+      [
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["D", "C", "B"]},
+        {"buildStepName": "B", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["A"]},
+        {"buildStepName": "C", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "D", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "its only found to be circular 5 deps deep" do
+      json = """
+      [
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["B"]},
+        {"buildStepName": "B", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["C"]},
+        {"buildStepName": "C", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["D"]},
+        {"buildStepName": "D", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["E"]},
+        {"buildStepName": "E", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["A"]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "its only found to be circular 5 deps wide" do
+      json = """
+      [
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["B", "C", "D", "E"]},
+        {"buildStepName": "B", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "C", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "D", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "E", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["A"]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "its only found to be circular 5 steps wide and 5 steps deep" do
+      json = """
+      [
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["B", "C", "D", "E"]},
+        {"buildStepName": "B", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "C", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "D", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "E", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["F"]},
+        {"buildStepName": "F", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["G"]},
+        {"buildStepName": "G", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["H"]},
+        {"buildStepName": "H", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["I"]},
+        {"buildStepName": "I", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["A"]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "its only found to be circular 5 steps wide and 5 steps deep after many steps" do
+      json = """
+      [
+        {"buildStepName": "B", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "C", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "D", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []},
+        {"buildStepName": "E", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["F"]},
+        {"buildStepName": "F", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["G"]},
+        {"buildStepName": "G", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["H"]},
+        {"buildStepName": "H", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["I"]},
+        {"buildStepName": "I", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["A"]},
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["B", "C", "D", "E"]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
     end
   end
 end

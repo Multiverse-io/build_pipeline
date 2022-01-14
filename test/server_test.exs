@@ -1,5 +1,6 @@
 defmodule BuildPipeline.ServerTest do
   use ExUnit.Case, async: true
+  import ExUnit.CaptureIO
   alias BuildPipeline.Server
 
   describe "start_link/2" do
@@ -168,6 +169,54 @@ defmodule BuildPipeline.ServerTest do
 
       refute Process.alive?(server_pid)
     end
+
+    test "with verbose true, returns the output of the commands given" do
+      server_setup = %{
+        build_pipeline: [
+          %{
+            build_step_name: "echoStuff",
+            command: "echo stuff",
+            command_env_vars: [],
+            command_type: :shell_command,
+            depends_on: MapSet.new(),
+            order: 0
+          }
+        ],
+        setup: %{cwd: ".", print_cmd_output: false, verbose: true}
+      }
+
+      output =
+        capture_io(fn ->
+          assert {:ok, server_pid} = Server.start_link({server_setup, self()})
+          assert_receive {:server_done, _}, 1_000
+        end)
+
+      assert output =~ "stuff"
+    end
+
+    test "when a step fails, we output its output" do
+      server_setup = %{
+        build_pipeline: [
+          %{
+            build_step_name: "fail",
+            command: "notARealShellCommand",
+            command_env_vars: [],
+            command_type: :shell_command,
+            depends_on: MapSet.new(),
+            order: 0
+          }
+        ],
+        setup: %{cwd: ".", print_cmd_output: false, verbose: true}
+      }
+
+      output =
+        capture_io(fn ->
+          assert {:ok, server_pid} = Server.start_link({server_setup, self()})
+          assert_receive {:server_done, _}, 1_000
+        end)
+
+      assert output =~ " notARealShellCommand: not found"
+    end
   end
 
   defp working_setup do
@@ -224,7 +273,8 @@ defmodule BuildPipeline.ServerTest do
       ],
       setup: %{
         cwd: "./test/example_projects/complex_yet_functioning",
-        print_cmd_output: false
+        print_cmd_output: false,
+        verbose: false
       }
     }
   end
@@ -283,7 +333,8 @@ defmodule BuildPipeline.ServerTest do
       ],
       setup: %{
         cwd: "./test/example_projects/complex_yet_functioning",
-        print_cmd_output: false
+        print_cmd_output: false,
+        verbose: false
       }
     }
   end

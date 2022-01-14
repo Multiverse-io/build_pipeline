@@ -1,9 +1,10 @@
 defmodule BuildPipeline.CommandLineArguments do
-  @default_setup %{cwd: ".", print_cmd_output: false}
+  @default_setup %{cwd: ".", print_cmd_output: false, verbose: false}
   @cwd "--cwd"
+  @verbose "--verbose"
   @print_cmd_output "--print-cmd-output"
   @usage_instructions """
-  usage ./build_pipline [--cwd ./path/to/directory/to/use] [--print-cmd-output]
+  usage ./build_pipline [--cwd ./path/to/directory/to/use] [--print-cmd-output] [--verbose]
   """
 
   def parse(command_line_args) do
@@ -20,6 +21,10 @@ defmodule BuildPipeline.CommandLineArguments do
 
   def parse(setup, [@cwd, cwd | rest]) do
     parse(Map.put(setup, :cwd, cwd), rest)
+  end
+
+  def parse(setup, [@verbose | rest]) do
+    parse(Map.put(setup, :verbose, true), rest)
   end
 
   def parse(_step, nonsense) do

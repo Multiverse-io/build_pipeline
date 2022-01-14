@@ -19,40 +19,21 @@ defmodule BuildPipeline.ConfigFile do
   def parse_and_validate({config_file_contents, setup}) do
     config_file_contents
     |> Jason.decode()
-    |> Result.and_then(&build_build_pipeline_tree/1)
+    |> Result.and_then(&build_build_pipeline/1)
     |> Result.and_then(&{:ok, %{build_pipeline: &1, setup: setup}})
   end
 
-  defp build_build_pipeline_tree(json) do
+  defp build_build_pipeline(json) do
     json
     |> Enum.with_index()
-    |> Enum.reduce_while({:ok, []}, fn {action, order}, {:ok, tree} ->
+    |> Enum.reduce_while({:ok, []}, fn {action, order}, {:ok, build_pipeline} ->
       case build_build_step(action, order) do
         {:error, error} -> {:halt, {:error, {:invalid_config, error}}}
-        {:ok, build_step} -> {:cont, {:ok, [build_step | tree]}}
+        {:ok, build_step} -> {:cont, {:ok, [build_step | build_pipeline]}}
       end
     end)
     |> Result.and_then(&validate_command_types/1)
-    |> Result.and_then(&validate_depends_on_exist/1)
-  end
-
-  defp validate_depends_on_exist(tree) do
-    all_build_step_names = tree |> Enum.map(& &1.build_step_name) |> MapSet.new()
-
-    tree
-    |> Enum.find(fn %{depends_on: depends_on} ->
-      depends_on = MapSet.new(depends_on)
-      not MapSet.subset?(depends_on, all_build_step_names)
-    end)
-    |> case do
-      nil ->
-        {:ok, tree}
-
-      %{build_step_name: build_step_name} ->
-        {:error,
-         {:invalid_config,
-          "I failed to parse the build_pipeline_config because the build step named '#{build_step_name}' has a 'dependsOn' build step name that was not found"}}
-    end
+    |> Result.and_then(&validate_depends_on/1)
   end
 
   @simple_steps [
@@ -141,8 +122,8 @@ defmodule BuildPipeline.ConfigFile do
     ~s|I failed to parse the build_pipeline_config because a built step had bad envVars of #{inspect(invalid)}. They should be in the form "envVars": [{"name": "MIX_ENV", "value": "test"}]|
   end
 
-  defp validate_command_types(tree) do
-    Enum.reduce_while(tree, {:ok, []}, fn build_step, {:ok, acc} ->
+  defp validate_command_types(build_pipeline) do
+    Enum.reduce_while(build_pipeline, {:ok, []}, fn build_step, {:ok, acc} ->
       command_type = Map.fetch!(build_step, :command_type)
 
       case Map.get(@command_types, command_type) do
@@ -156,5 +137,70 @@ defmodule BuildPipeline.ConfigFile do
           {:cont, {:ok, [Map.put(build_step, :command_type, valid_command_type) | acc]}}
       end
     end)
+  end
+
+  defp validate_depends_on(build_pipeline) do
+    Enum.reduce_while(build_pipeline, [], fn build_step, _dependencies ->
+      case find_dependencies(build_step, build_pipeline) do
+        {:error, error} -> {:halt, {:error, {:invalid_config, error}}}
+        other -> {:cont, other}
+      end
+    end)
+    |> case do
+      {:error, error} -> {:error, error}
+      _ -> {:ok, build_pipeline}
+    end
+  end
+
+  defp find_dependencies(build_step, build_pipeline) do
+    build_step.depends_on
+    |> MapSet.to_list()
+    |> Enum.reduce_while([], fn depends_on, dependencies ->
+      case find_dependencies(depends_on, dependencies, build_pipeline) do
+        {:error, error} -> {:halt, {:error, error}}
+        other -> {:cont, other}
+      end
+    end)
+  end
+
+  defp find_dependencies(_depends_on, {:error, error}, _build_pipeline) do
+    {:error, error}
+  end
+
+  defp find_dependencies(depends_on, dependencies, build_pipeline) do
+    if Enum.member?(dependencies, depends_on) do
+      {:error, circular_depends_on_error()}
+    else
+      case find_dependency(depends_on, build_pipeline) do
+        nil ->
+          {:error, no_depedency_error(depends_on)}
+
+        build_step ->
+          build_step.depends_on
+          |> MapSet.to_list()
+          |> Enum.reduce([depends_on | dependencies], fn new_depends_on, new_dependencies ->
+            find_dependencies(new_depends_on, new_dependencies, build_pipeline)
+          end)
+          |> case do
+            {:halt, {:error, error}} ->
+              {:error, error}
+
+            other ->
+              other
+          end
+      end
+    end
+  end
+
+  defp find_dependency(depends_on, build_pipeline) do
+    Enum.find(build_pipeline, fn build_step -> build_step.build_step_name == depends_on end)
+  end
+
+  defp circular_depends_on_error do
+    "I failed to parse the build_pipeline_config because I found a circular dependency!"
+  end
+
+  defp no_depedency_error(depends_on) do
+    "I failed to parse the build_pipeline_config because a build step had a dependsOn of '#{depends_on}' that does not exist"
   end
 end
