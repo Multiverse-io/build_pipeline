@@ -17,20 +17,10 @@ defmodule BuildPipeline.ShellCommandRunner do
 
   @impl true
   def init(state) do
-    #if state.command == "MIX_ENV=test mix compile --force --warnings-as-errors" do
-    #  port =
-    #    Port.open({:spawn, "mix compile --force --warnings-as-errors"}, [
-    #      {:env, [{'MIX_ENV', 'test'}]},
-    #      :exit_status,
-    #      :stderr_to_stdout
-    #    ])
+    port =
+      Port.open({:spawn, state.command}, [{:env, state.env_vars}, :exit_status, :stderr_to_stdout])
 
-    #  {:ok, Map.merge(state, %{port: port, command_output: ""})}
-    #else
-      port = Port.open({:spawn, state.command}, [{:env, state.env_vars}, :exit_status, :stderr_to_stdout])
-
-      {:ok, Map.merge(state, %{port: port, command_output: ""})}
-    #end
+    {:ok, Map.merge(state, %{port: port, command_output: ""})}
   end
 
   @impl true

@@ -1,0 +1,3 @@
+[
+  {"buildStepName": "sayHello", "commandType": "script", "command": "echo_hello", "dependsOn": []}
+]

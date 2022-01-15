@@ -2,6 +2,7 @@ defmodule BuildPipeline.MixProject do
   use Mix.Project
 
   @app_name :build_pipeline
+  @escript_name :"run_#{@app_name}"
 
   def project do
     [
@@ -24,11 +25,11 @@ defmodule BuildPipeline.MixProject do
   end
 
   defp escript_name(:prod) do
-    @app_name
+    @escript_name
   end
 
   defp escript_name(env) do
-    :"#{@app_name}_#{to_string(env)}"
+    :"#{@escript_name}_#{to_string(env)}"
   end
 
   def application do

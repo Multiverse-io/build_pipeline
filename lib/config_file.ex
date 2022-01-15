@@ -2,11 +2,10 @@ defmodule BuildPipeline.ConfigFile do
   alias BuildPipeline.Result
 
   @command_types %{
-    "shellCommand" => :shell_command
+    "shellCommand" => :shell_command,
+    "script" => :script
   }
 
-  # TODO add test to assert all build_step_name's are unique
-  # TODO add test to assert all build_step_name dependsOn exist
   def read(%{cwd: cwd} = setup) do
     file_location = "#{cwd}/build_pipeline/config.json"
 
@@ -33,6 +32,7 @@ defmodule BuildPipeline.ConfigFile do
       end
     end)
     |> Result.and_then(&validate_command_types/1)
+    |> Result.and_then(&validate_build_step_names_are_unique/1)
     |> Result.and_then(&validate_depends_on/1)
   end
 
@@ -137,6 +137,25 @@ defmodule BuildPipeline.ConfigFile do
           {:cont, {:ok, [Map.put(build_step, :command_type, valid_command_type) | acc]}}
       end
     end)
+  end
+
+  defp validate_build_step_names_are_unique(build_pipeline) do
+    build_pipeline
+    |> Enum.reduce_while(MapSet.new(), fn %{build_step_name: name}, names ->
+      if MapSet.member?(names, name) do
+        {:halt, {:error, {:invalid_config, duplicate_build_step_name_error(name)}}}
+      else
+        {:cont, MapSet.put(names, name)}
+      end
+    end)
+    |> case do
+      {:error, error} -> {:error, error}
+      _ -> {:ok, build_pipeline}
+    end
+  end
+
+  defp duplicate_build_step_name_error(name) do
+    ~s|I failed to parse the build_pipeline_config because a the buildStepName "#{name}" was duplicated, but buildStepNames must be unique|
   end
 
   defp validate_depends_on(build_pipeline) do

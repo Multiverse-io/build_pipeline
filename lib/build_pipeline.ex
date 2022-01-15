@@ -24,8 +24,7 @@ defmodule BuildPipeline do
     {:ok, supervisor_pid} = Supervisor.start_link(children, strategy: :one_for_one)
 
     receive do
-      {:server_done, _result} ->
-        Supervisor.stop(supervisor_pid)
+      {:server_done, _result} -> Supervisor.stop(supervisor_pid)
     end
   end
 
@@ -37,6 +36,19 @@ defmodule BuildPipeline do
             "#{bad_cmd_args}\n" <>
             "#{usage_instructions}"
         )
+
+      {:invalid_config, error_message} ->
+        IO.puts(error_message)
+
+      {:config_file_not_found, bad_config_file_path} ->
+        IO.puts(
+          "I failed to find a config.json file in the place you told me to look '#{bad_config_file_path}'"
+        )
+
+      %Jason.DecodeError{} ->
+        IO.puts("I failed to parse the config.json because it was not valid JSON")
     end
+
+    :error
   end
 end

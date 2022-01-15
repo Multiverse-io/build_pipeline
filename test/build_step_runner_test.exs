@@ -3,19 +3,22 @@ defmodule BuildPipeline.BuildStepRunnerTest do
   alias BuildPipeline.{BuildStepBuilder, BuildStepRunner}
 
   @build_step BuildStepBuilder.build("noop")
+  @cwd "."
 
   describe "start_link/2" do
     test "starts up a build step runner process with the status 'waiting'" do
-      assert {:ok, pid} = BuildStepRunner.start_link(@build_step, self())
+      assert {:ok, pid} = BuildStepRunner.start_link(@build_step, self(), @cwd)
       assert is_pid(pid)
 
-      assert %{build_step: @build_step, server_pid: self(), status: :waiting, opts: []} ==
+      assert %{build_step: @build_step, server_pid: self(), status: :waiting, opts: [], cwd: @cwd} ==
                :sys.get_state(pid)
     end
 
     test "stores optional options in the genserver state" do
       assert {:ok, pid} =
-               BuildStepRunner.start_link(@build_step, self(), print_cmd_output_as_it_comes: false)
+               BuildStepRunner.start_link(@build_step, self(), @cwd,
+                 print_cmd_output_as_it_comes: false
+               )
 
       assert is_pid(pid)
 
@@ -37,6 +40,21 @@ defmodule BuildPipeline.BuildStepRunnerTest do
       assert_step_ran_to_completion(["dependentStep"], ["OtherStep"], false)
       assert_step_ran_to_completion(["dependentStep"], [], false)
     end
+
+    test "can run scripts" do
+      build_step =
+        BuildStepBuilder.build()
+        |> BuildStepBuilder.with_script("echo_hello")
+
+      cwd = "test/example_projects/runs_a_script"
+
+      {:ok, pid} = BuildStepRunner.start_link(build_step, self(), cwd)
+
+      GenServer.cast(pid, {:run_if_able, MapSet.new()})
+
+      assert_receive {:"$gen_cast", {:runner_finished, ^pid, %{exit_code: 0, output: output}}}
+      assert output == "hello\n"
+    end
   end
 
   describe "handle_cast/2 - run" do
@@ -45,7 +63,7 @@ defmodule BuildPipeline.BuildStepRunnerTest do
         BuildStepBuilder.build()
         |> BuildStepBuilder.with_shell_command("true")
 
-      {:ok, pid} = BuildStepRunner.start_link(build_step, self())
+      {:ok, pid} = BuildStepRunner.start_link(build_step, self(), @cwd)
 
       GenServer.cast(pid, :run)
 
@@ -59,7 +77,7 @@ defmodule BuildPipeline.BuildStepRunnerTest do
       |> BuildStepBuilder.with_shell_command("true")
       |> BuildStepBuilder.with_depends_on(MapSet.new(depends_on))
 
-    {:ok, pid} = BuildStepRunner.start_link(build_step, self())
+    {:ok, pid} = BuildStepRunner.start_link(build_step, self(), @cwd)
 
     GenServer.cast(pid, {:run_if_able, MapSet.new(completed_steps)})
 

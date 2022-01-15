@@ -2,52 +2,53 @@ defmodule BuildPipeline.BuildStepRunner do
   use GenServer
   alias BuildPipeline.ShellCommandRunner
 
-  def start_link(build_step, server_pid, opts \\ []) do
-    GenServer.start_link(__MODULE__, {build_step, server_pid, opts})
+  def start_link(build_step, server_pid, cwd, opts \\ []) do
+    GenServer.start_link(__MODULE__, {build_step, server_pid, cwd, opts})
   end
 
   @impl true
-  def init({build_step, server_pid, opts}) do
-    {:ok, %{build_step: build_step, status: :waiting, server_pid: server_pid, opts: opts}}
+  def init({build_step, server_pid, cwd, opts}) do
+    {:ok,
+     %{build_step: build_step, status: :waiting, server_pid: server_pid, opts: opts, cwd: cwd}}
   end
 
   @impl true
   def handle_cast({:run_if_able, completed_runners}, state) do
-    state =
-      case state do
-        %{build_step: %{depends_on: depends_on}, status: :waiting} ->
-          if MapSet.subset?(depends_on, completed_runners) do
-            run_build_step()
-            %{state | status: :running}
-          else
-            state
-          end
+    %{build_step: %{depends_on: depends_on}, status: status} = state
 
-        _state ->
-          state
-      end
-
-    {:noreply, state}
+    if status == :waiting && MapSet.subset?(depends_on, completed_runners) do
+      {:noreply, %{state | status: :running}, {:continue, :run}}
+    else
+      {:noreply, state}
+    end
   end
 
   def handle_cast(:run, state) do
-    case state do
-      %{
-        build_step: %{
-          command_type: :shell_command,
-          command: command,
-          command_env_vars: command_env_vars
-        }
-      } ->
-        run_shell_command(command, command_env_vars, state)
-
-      state ->
-        {:noreply, state}
-    end
+    handle_continue(:run, state)
   end
 
   def handle_cast({:update_status, status}, state) do
     {:noreply, %{state | status: status}}
+  end
+
+  @impl true
+  def handle_continue(:run, state) do
+    %{
+      build_step: %{
+        command_type: command_type,
+        command: command,
+        command_env_vars: command_env_vars
+      },
+      cwd: cwd
+    } = state
+
+    case command_type do
+      :shell_command ->
+        run_shell_command(command, command_env_vars, state)
+
+      :script ->
+        run_shell_command("#{cwd}/build_pipeline/scripts/#{command}", command_env_vars, state)
+    end
   end
 
   @impl true
@@ -74,11 +75,5 @@ defmodule BuildPipeline.BuildStepRunner do
       |> Map.put(:status, :finished)
 
     {:stop, :normal, state}
-  end
-
-  defp run_build_step do
-    runner_pid = self()
-    spawn_link(fn -> GenServer.cast(runner_pid, {:update_status, :running}) end)
-    spawn_link(fn -> GenServer.cast(runner_pid, :run) end)
   end
 end

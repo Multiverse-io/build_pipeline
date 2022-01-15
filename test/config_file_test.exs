@@ -4,12 +4,11 @@ defmodule BuildPipeline.ConfigFileTest do
 
   @simple_example_dir "./test/example_projects/simple_and_functioning"
   @simple_example_json File.read!("#{@simple_example_dir}/build_pipeline/config.json")
-  @setup %{cwd: ".", print_cmd_output: false}
+  @setup %{cwd: "."}
 
-  # TODO delete print_cmd_output from test files
   describe "read" do
     test "returns ok with the file's contents if it's there and readabe" do
-      setup = %{cwd: @simple_example_dir, print_cmd_output: false}
+      setup = %{cwd: @simple_example_dir}
       assert {:ok, {file_contents, ^setup}} = ConfigFile.read(setup)
 
       assert file_contents == @simple_example_json
@@ -196,18 +195,31 @@ defmodule BuildPipeline.ConfigFileTest do
                ConfigFile.parse_and_validate({missing_key, @setup})
     end
 
-    test "no circular dependsOn references - simple case" do
+    test "fails when build_step_names are not unqiue" do
       json = """
       [
-        {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": ["enoughFuel"]},
-        {"buildStepName": "enoughFuel", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": ["tiresNotSlashed"]}
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": []},
+        {"buildStepName": "A", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": []}
       ]
       """
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because a the buildStepName \"A\" was duplicated, but buildStepNames must be unique"}} ==
                ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "supports the 'script' comandType" do
+      json = """
+      [
+        {"buildStepName": "A", "commandType": "script", "command": "echo_hello", "dependsOn": []}
+      ]
+      """
+
+      assert {:ok, %{build_pipeline: build_pipeline}} =
+               ConfigFile.parse_and_validate({json, @setup})
+
+      assert [%{command: "echo_hello", command_type: :script}] = build_pipeline
     end
   end
 

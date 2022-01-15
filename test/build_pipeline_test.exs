@@ -4,17 +4,10 @@ defmodule BuildPipelineTest do
   alias BuildPipeline
 
   describe "main" do
-    # TODO test what to do in each error case (in preflight checks htat is)
     test "can show runner output on the screen" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-
-      # assert :ok ==
-      #         BuildPipeline.main([
-      #           "--cwd",
-      #           "./test/example_projects/complex_yet_functioning"
-      #         ])
 
       output =
         capture_io(fn ->
@@ -46,6 +39,57 @@ defmodule BuildPipelineTest do
       assert output =~ "echo hello [Finished in"
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
+
+    test "returns error if config file parsing fails" do
+      output =
+        capture_io(fn ->
+          assert :error ==
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./test/example_projects/bad_config"
+                   ])
+        end)
+
+      assert output =~ "I failed to parse the build_pipeline_config"
+    end
+
+    test "returns error if given nonsense CLI args" do
+      output =
+        capture_io(fn ->
+          assert :error ==
+                   BuildPipeline.main([
+                     "--nonesense"
+                   ])
+        end)
+
+      assert output =~ "There was at least one bad argument in the command line"
+    end
+
+    test "returns error if the config file is not found" do
+      output =
+        capture_io(fn ->
+          assert :error ==
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./not/a_real/directory"
+                   ])
+        end)
+
+      assert output =~ "I failed to find a config.json file"
+    end
+
+    test "returns error if the config is invalid JSON" do
+      output =
+        capture_io(fn ->
+          assert :error ==
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./test/example_projects/invalid_json"
+                   ])
+        end)
+
+      assert output == "I failed to parse the config.json because it was not valid JSON\n"
     end
   end
 end

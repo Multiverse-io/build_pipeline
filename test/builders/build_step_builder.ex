@@ -7,7 +7,7 @@ defmodule BuildPipeline.BuildStepBuilder do
       command: @noop_command_in_bash,
       command_env_vars: [],
       command_type: :shell_command,
-      depends_on: MapSet.new([])
+      depends_on: MapSet.new()
     }
   end
 
@@ -17,5 +17,9 @@ defmodule BuildPipeline.BuildStepBuilder do
 
   def with_shell_command(build_step, shell_command) do
     Map.merge(build_step, %{command_type: :shell_command, command: shell_command})
+  end
+
+  def with_script(build_step, script) do
+    Map.merge(build_step, %{command_type: :script, command: script})
   end
 end

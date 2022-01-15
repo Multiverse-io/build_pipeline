@@ -1,5 +1,56 @@
 [
-  {"buildStepName": "get dependencies", "commandType": "shellCommand", "command": "mix deps.get --only test", "dependsOn": []},
-  {"buildStepName": "compile", "commandType": "shellCommand", "command": "mix compile --force --warnings-as-errors", "dependsOn": ["get dependencies"], "envVars": [{"name": "MIX_ENV", "value": "test"}]},
-  {"buildStepName": "test", "commandType": "shellCommand", "command": "mix test --color", "dependsOn": ["compile"]}
+  {
+    "buildStepName": "find_todos",
+    "commandType": "script",
+    "command": "find_todos",
+    "dependsOn": []
+  },
+  {
+    "buildStepName": "deps.get",
+    "commandType": "shellCommand",
+    "command": "mix deps.get",
+    "dependsOn": []
+  },
+  {
+    "buildStepName": "compile",
+    "commandType": "shellCommand",
+    "command": "mix compile --force --warnings-as-errors",
+    "dependsOn": [
+      "deps.get"
+    ],
+    "envVars": [
+      {
+        "name": "MIX_ENV",
+        "value": "test"
+      }
+    ]
+  },
+  {
+    "buildStepName": "loadconfig",
+    "commandType": "shellCommand",
+    "command": "mix loadconfig config/prod.exs",
+    "dependsOn": []
+  },
+  {
+    "buildStepName": "test",
+    "commandType": "shellCommand",
+    "command": "mix test --color",
+    "dependsOn": [
+      "compile"
+    ]
+  },
+  {
+    "buildStepName": "esciptBuild",
+    "commandType": "shellCommand",
+    "command": "mix escript.build",
+    "dependsOn": [
+      "test"
+    ],
+    "envVars": [
+      {
+        "name": "MIX_ENV",
+        "value": "prod"
+      }
+    ]
+  }
 ]
