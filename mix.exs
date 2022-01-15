@@ -22,6 +22,7 @@ defmodule BuildPipeline.MixProject do
     [
       name: "build_pipeline",
       licenses: ["WTFPL"],
+      links: %{"GitHub" => "https://github.com/mbernerslee/build_pipeline"},
       source_url: "https://github.com/mbernerslee/build_pipeline"
     ]
   end
