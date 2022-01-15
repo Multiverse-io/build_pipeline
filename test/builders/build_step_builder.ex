@@ -1,4 +1,5 @@
 defmodule BuildPipeline.BuildStepBuilder do
+  @moduledoc false
   @noop_command_in_bash "true"
 
   def build(build_step_name \\ "noop") do

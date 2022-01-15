@@ -1,4 +1,5 @@
 defmodule BuildPipeline.CommandLineArguments do
+  @moduledoc false
   @default_setup %{cwd: ".", verbose: false}
   @cwd "--cwd"
   @verbose "--verbose"

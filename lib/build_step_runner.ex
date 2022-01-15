@@ -1,6 +1,7 @@
 defmodule BuildPipeline.BuildStepRunner do
   use GenServer
   alias BuildPipeline.ShellCommandRunner
+  @moduledoc false
 
   def start_link(build_step, server_pid, cwd, opts \\ []) do
     GenServer.start_link(__MODULE__, {build_step, server_pid, cwd, opts})

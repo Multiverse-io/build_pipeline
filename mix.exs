@@ -7,6 +7,8 @@ defmodule BuildPipeline.MixProject do
   def project do
     [
       app: :build_pipeline,
+      description: description(),
+      package: package(),
       version: "0.1.0",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -14,6 +16,18 @@ defmodule BuildPipeline.MixProject do
       deps: deps(),
       escript: [main_module: BuildPipeline, name: escript_name(Mix.env())]
     ]
+  end
+
+  defp package do
+    [
+      name: "build_pipeline",
+      licenses: ["WTFPL"],
+      source_url: "https://github.com/mbernerslee/build_pipeline"
+    ]
+  end
+
+  defp description do
+    "A development tool for running commands with maximum possible concurrency, designed to speed up CI / CD build piplines by running mulitple independent build steps at once."
   end
 
   defp elixirc_paths(:test) do
@@ -39,6 +53,9 @@ defmodule BuildPipeline.MixProject do
   end
 
   defp deps do
-    [{:jason, "~> 1.2"}]
+    [
+      {:ex_doc, "~> 0.27", only: :dev, runtime: false},
+      {:jason, "~> 1.2"}
+    ]
   end
 end

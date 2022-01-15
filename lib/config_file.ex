@@ -1,6 +1,7 @@
 defmodule BuildPipeline.ConfigFile do
   alias BuildPipeline.Result
 
+  @moduledoc false
   @command_types %{
     "shellCommand" => :shell_command,
     "script" => :script

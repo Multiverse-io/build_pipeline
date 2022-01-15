@@ -3,6 +3,7 @@ defmodule BuildPipeline.Server do
   alias BuildPipeline.BuildStepRunner
   alias IO.ANSI
 
+  @moduledoc false
   @default_genserver_options []
 
   def child_spec(setup, parent_pid, genserver_options \\ @default_genserver_options) do
