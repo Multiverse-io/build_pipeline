@@ -284,6 +284,6 @@ defmodule BuildPipeline.Server do
   end
 
   defp should_print_runner_output? do
-    Application.get_env(:build_pipeline, :print_runner_output)
+    Application.get_env(:build_pipeline, :print_runner_output, true)
   end
 end

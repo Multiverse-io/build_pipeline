@@ -1,6 +1,6 @@
 #!/bin/bash
 
-find_result=$(git grep TODO -- './*' ':!*scripts/find_todos' ':!.credo.exs' ':!README.md')
+find_result=$(git grep TODO -- './*' ':!*scripts/find_todos' ':!.credo.exs' ':!README.md' ':!example_projects/*')
 result=$?
 if [ $result -eq 0 ]; then
   echo "TODO found in:"

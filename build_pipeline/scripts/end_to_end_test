@@ -1,0 +1,25 @@
+#!/bin/bash
+
+example_projects_dir="example_projects"
+project_dir="$example_projects_dir/test_project"
+rm -rf $project_dir
+cd $example_projects_dir
+mix new test_project > /dev/null 2>&1
+cd "test_project"
+sed -i 's/.*dep_from_hexpm.*/      {:build_pipeline, path: "..\/.."}/g' mix.exs
+mix deps.get
+mix build_pipeline.init
+init_result=$?
+mix build_pipeline.run
+run_result=$?
+if [ $init_result -ne 0 ]; then
+  echo "FAILED - mix build_pipeline.init"
+  exit 1
+fi
+
+if [ $run_result -ne 0 ]; then
+  echo "FAILED - mix build_pipeline.run"
+  exit 1
+fi
+rm -rf $project_dir
+exit 0

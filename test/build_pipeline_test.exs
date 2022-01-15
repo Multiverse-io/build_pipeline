@@ -14,7 +14,7 @@ defmodule BuildPipelineTest do
           assert :ok ==
                    BuildPipeline.main([
                      "--cwd",
-                     "./test/example_projects/complex_yet_functioning"
+                     "./example_projects/complex_yet_functioning"
                    ])
         end)
 
@@ -47,7 +47,7 @@ defmodule BuildPipelineTest do
           assert :error ==
                    BuildPipeline.main([
                      "--cwd",
-                     "./test/example_projects/bad_config"
+                     "./example_projects/bad_config"
                    ])
         end)
 
@@ -85,7 +85,7 @@ defmodule BuildPipelineTest do
           assert :error ==
                    BuildPipeline.main([
                      "--cwd",
-                     "./test/example_projects/invalid_json"
+                     "./example_projects/invalid_json"
                    ])
         end)
 

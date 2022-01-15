@@ -11,7 +11,7 @@ defmodule Mix.Tasks.BuildPipeline.RunTest do
 
       output =
         capture_io(fn ->
-          assert :ok == Run.run(["--cwd", "test/example_projects/complex_yet_functioning"])
+          assert :ok == Run.run(["--cwd", "example_projects/complex_yet_functioning"])
         end)
 
       assert Regex.match?(~r|echo tires \[Finished in|, output)

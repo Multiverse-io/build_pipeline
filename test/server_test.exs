@@ -312,7 +312,7 @@ defmodule BuildPipeline.ServerTest do
         }
       ],
       setup: %{
-        cwd: "./test/example_projects/complex_yet_functioning",
+        cwd: "./example_projects/complex_yet_functioning",
         verbose: false
       }
     }
@@ -371,7 +371,7 @@ defmodule BuildPipeline.ServerTest do
         }
       ],
       setup: %{
-        cwd: "./test/example_projects/complex_yet_functioning",
+        cwd: "./example_projects/complex_yet_functioning",
         verbose: false
       }
     }

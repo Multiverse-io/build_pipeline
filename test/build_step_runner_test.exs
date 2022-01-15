@@ -46,7 +46,7 @@ defmodule BuildPipeline.BuildStepRunnerTest do
         BuildStepBuilder.build()
         |> BuildStepBuilder.with_script("echo_hello")
 
-      cwd = "test/example_projects/runs_a_script"
+      cwd = "./example_projects/runs_a_script"
 
       {:ok, pid} = BuildStepRunner.start_link(build_step, self(), cwd)
 

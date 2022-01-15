@@ -52,5 +52,13 @@
         "value": "prod"
       }
     ]
+  },
+  {
+    "buildStepName": "end_to_end_test",
+    "commandType": "script",
+    "command": "end_to_end_test",
+    "dependsOn": [
+      "compile"
+    ]
   }
 ]

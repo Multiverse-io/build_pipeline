@@ -2,7 +2,7 @@ defmodule BuildPipeline.ConfigFileTest do
   use ExUnit.Case, async: true
   alias BuildPipeline.ConfigFile
 
-  @simple_example_dir "./test/example_projects/simple_and_functioning"
+  @simple_example_dir "./example_projects/simple_and_functioning"
   @simple_example_json File.read!("#{@simple_example_dir}/build_pipeline/config.json")
   @setup %{cwd: "."}
 
