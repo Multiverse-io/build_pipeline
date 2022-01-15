@@ -15,6 +15,8 @@ Then, From the root of your projects' directory (where your `mix.exs` file is) r
 mix build_pipeline.init
 ```
 
+Run this as first-time setup -
+
 This will generate some directories and a default `config.json` file, like so:
 ```
 build_pipeline
@@ -95,7 +97,7 @@ Note that in the above example, I added a bash script to `scripts` which returns
 
 Also note:
 If A depends on B which depends on C, then you only need to define A with the `dependsOn` of [B], and B with the `dependsOn` of [C].
-Saying that A `dependsOn` [B, C] is redundant. Just define A with `dependsOn` = [B]. 
+Saying that A `dependsOn` [B, C] is redundant. Just define A with `dependsOn` = [B].
 
 Once your `config.json` and any supporting scripts in `scripts` are in place, you're good to go, and you can run
 

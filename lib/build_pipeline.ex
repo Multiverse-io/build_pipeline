@@ -1,5 +1,6 @@
 defmodule BuildPipeline do
   alias BuildPipeline.{CommandLineArguments, ConfigFile, Result, Server}
+  @moduledoc false
 
   def main(command_line_args \\ []) do
     run(command_line_args)

@@ -1,6 +1,94 @@
 defmodule Mix.Tasks.BuildPipeline.Init do
-  @moduledoc ""
-  @shortdoc "this doesn't work?"
+  @moduledoc """
+  This will generate some directories and a default `config.json` file, like so:
+  ```
+  build_pipeline
+  ├── config.json
+  └── scripts
+  ```
+  Next, edit your `config.json` file, adding the desired build steps.<br>
+  `config.json` must be only a list, containing `buildSteps`.
+
+  Build steps are defined as in the example below.
+  - `buildStepName` (mandatory) - a name for this build step
+  - `commandType` (mandatory) - `script` or `shellCommand`
+  - `command` (mandatory) - either a file name of a script in the `build_pipline/scripts` folder, or a shell command to run
+  - `dependsOn` (mandatory) - a list of other `buildStepName`s, which must run first before this step is run
+  - `envVars` (optional) - a list of extra environment variables to be set when the `command` is run
+
+  ```
+  [
+    {
+      "buildStepName": "find_todos",
+      "commandType": "script",
+      "command": "find_todos",
+      "dependsOn": []
+    },
+    {
+      "buildStepName": "deps.get",
+      "commandType": "shellCommand",
+      "command": "mix deps.get",
+      "dependsOn": []
+    },
+    {
+      "buildStepName": "compile",
+      "commandType": "shellCommand",
+      "command": "mix compile --force --warnings-as-errors",
+      "dependsOn": [
+        "deps.get"
+      ],
+      "envVars": [
+        {
+          "name": "MIX_ENV",
+          "value": "test"
+        }
+      ]
+    },
+    {
+      "buildStepName": "loadconfig",
+      "commandType": "shellCommand",
+      "command": "mix loadconfig config/prod.exs",
+      "dependsOn": []
+    },
+    {
+      "buildStepName": "test",
+      "commandType": "shellCommand",
+      "command": "mix test --color",
+      "dependsOn": [
+        "compile"
+      ]
+    },
+    {
+      "buildStepName": "esciptBuild",
+      "commandType": "shellCommand",
+      "command": "mix escript.build",
+      "dependsOn": [
+        "test"
+      ],
+      "envVars": [
+        {
+          "name": "MIX_ENV",
+          "value": "prod"
+        }
+      ]
+    }
+  ]
+
+
+  ```
+  Note that in the above example, I added a bash script to `scripts` which returns a non-zero exit code if todos are found anywhere in my code (except for in the README of course :) because that wouldn't work).
+
+  Also note:
+  If A depends on B which depends on C, then you only need to define A with the `dependsOn` of [B], and B with the `dependsOn` of [C].
+  Saying that A `dependsOn` [B, C] is redundant. Just define A with `dependsOn` = [B].
+
+  Once your `config.json` and any supporting scripts in `scripts` are in place, you're good to go, and you can run
+
+  ```
+  mix build_pipeline.run
+  ```
+  """
+  @shortdoc "Run to perform first-time setup for build_pipeline"
 
   use Mix.Task
   alias BuildPipeline.Result

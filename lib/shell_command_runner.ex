@@ -1,5 +1,6 @@
 defmodule BuildPipeline.ShellCommandRunner do
   use GenServer
+  @moduledoc false
 
   def run(command, env_vars, opts \\ []) do
     {:ok, _pid} =
