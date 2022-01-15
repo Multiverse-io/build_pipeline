@@ -108,7 +108,7 @@ And you're away!
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
 ## mix build_pipeline.run - Options
-- `--verbose` Show the output of successful commands
+- `--verbose` (Optional) - Show the output of successful commands. Defaults to `false`
 
 
 ## Installation
