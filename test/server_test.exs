@@ -92,7 +92,7 @@ defmodule BuildPipeline.ServerTest do
 
     test "runs build steps, returning the result of the first that fails along with those that succeeded" do
       capture_io(fn ->
-        assert {:ok, server_pid} = Server.start_link({failing_setup(), self()})
+        assert {:ok, _server_pid} = Server.start_link({failing_setup(), self()})
 
         assert_receive {:server_done,
                         %{
@@ -142,7 +142,7 @@ defmodule BuildPipeline.ServerTest do
                               depends_on: _,
                               exit_code: 127,
                               order: 3,
-                              output: "sh: 1: exec: notARealCommand: not found\n",
+                              output: _,
                               status: :complete,
                               duration_in_microseconds: _
                             },

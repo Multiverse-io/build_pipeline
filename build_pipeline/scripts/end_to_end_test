@@ -6,7 +6,10 @@ rm -rf $project_dir
 cd $example_projects_dir
 mix new test_project > /dev/null 2>&1
 cd "test_project"
-sed -i 's/.*dep_from_hexpm.*/      {:build_pipeline, path: "..\/.."}/g' mix.exs
+touch new_mix.exs
+sed 's/.*dep_from_hexpm.*/      {:build_pipeline, path: "..\/.."}/g' mix.exs > new_mix.exs
+rm mix.exs
+mv new_mix.exs mix.exs
 mix deps.get
 mix build_pipeline.init
 init_result=$?
