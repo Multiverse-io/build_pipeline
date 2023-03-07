@@ -1,6 +1,7 @@
 defmodule BuildPipeline.BuildStepRunnerTest do
   use ExUnit.Case, async: true
-  alias BuildPipeline.{BuildStepBuilder, BuildStepRunner}
+  alias BuildPipeline.BuildStepRunner
+  alias BuildPipeline.Builders.BuildStepBuilder
 
   @build_step BuildStepBuilder.build("noop")
   @cwd "."

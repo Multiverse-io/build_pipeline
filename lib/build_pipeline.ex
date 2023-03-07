@@ -1,5 +1,5 @@
 defmodule BuildPipeline do
-  alias BuildPipeline.{CommandLineArguments, ConfigFile, Result, Server}
+  alias BuildPipeline.{CommandLineArguments, ConfigFile, Result, Server, TerminalWidth}
   @moduledoc false
 
   def main(command_line_args \\ []) do
@@ -17,6 +17,7 @@ defmodule BuildPipeline do
     |> CommandLineArguments.parse()
     |> Result.and_then(&ConfigFile.read/1)
     |> Result.and_then(&ConfigFile.parse_and_validate/1)
+    |> Result.and_then(&TerminalWidth.append_to_setup/1)
   end
 
   defp run_if_preflight_checks_passed({:ok, setup}) do
@@ -48,6 +49,14 @@ defmodule BuildPipeline do
 
       %Jason.DecodeError{} ->
         IO.puts("I failed to parse the config.json because it was not valid JSON")
+
+      {:terminal_width, :tput_not_on_system} ->
+        IO.puts(
+          "I tried to run 'tput cols' but it failed because it looks like I'm not able to run the 'tput' binary?"
+        )
+
+      {:terminal_width, :unexpected_tput_result, _} ->
+        IO.puts("I tried to run 'tput cols' but it returned a result I couldn't parse! Damn")
     end
 
     :error

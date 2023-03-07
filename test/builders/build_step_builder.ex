@@ -1,4 +1,4 @@
-defmodule BuildPipeline.BuildStepBuilder do
+defmodule BuildPipeline.Builders.BuildStepBuilder do
   @moduledoc false
   @noop_command_in_bash "true"
 

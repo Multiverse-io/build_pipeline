@@ -32,7 +32,7 @@ defmodule BuildPipeline.MixProject do
   end
 
   defp elixirc_paths(:test) do
-    ["lib", "test/builders"]
+    ["lib", "test/builders", "test/mocks"]
   end
 
   defp elixirc_paths(_) do
@@ -56,7 +56,8 @@ defmodule BuildPipeline.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
-      {:jason, "~> 1.2"}
+      {:jason, "~> 1.2"},
+      {:mimic, "~> 1.7", only: :test}
     ]
   end
 end

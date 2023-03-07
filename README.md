@@ -9,6 +9,9 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 
 ## Installation and Getting Up and Running
 
+### Dependencies
+- `tput` must be runnable on your system. This is used to work out the width of your terminal to enable fancy command line output
+
 Add build_pipeline as a dependency to your project<br>
 Then, From the root of your projects' directory (where your `mix.exs` file is) run:
 ```

@@ -1,7 +1,10 @@
 defmodule BuildPipelineTest do
   use ExUnit.Case, async: false
+  use Mimic
   import ExUnit.CaptureIO
   alias BuildPipeline
+  alias BuildPipeline.TerminalWidth.TputCols
+  alias BuildPipeline.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
   describe "main" do
     test "can show runner output on the screen" do
@@ -90,6 +93,40 @@ defmodule BuildPipelineTest do
         end)
 
       assert output == "I failed to parse the config.json because it was not valid JSON\n"
+    end
+
+    test "returns error if we can't determine the terminals width because tput can't be run" do
+      Mimic.copy(TputCols)
+      Mimic.stub(TputCols, :run, &NotOnSystem.run/0)
+
+      output =
+        capture_io(fn ->
+          assert :error ==
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./example_projects/complex_yet_functioning"
+                   ])
+        end)
+
+      assert output ==
+               "I tried to run 'tput cols' but it failed because it looks like I'm not able to run the 'tput' binary?\n"
+    end
+
+    test "returns error if we can't determine the terminals width because tput returns nonsense" do
+      Mimic.copy(TputCols)
+      Mimic.stub(TputCols, :run, &NonsenseResult.run/0)
+
+      output =
+        capture_io(fn ->
+          assert :error ==
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./example_projects/complex_yet_functioning"
+                   ])
+        end)
+
+      assert output ==
+               "I tried to run 'tput cols' but it returned a result I couldn't parse! Damn\n"
     end
   end
 end
