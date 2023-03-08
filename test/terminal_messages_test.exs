@@ -63,7 +63,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
-  describe "running/2" do
+  describe "running/2 - with verbose false" do
     test "given runners & a runner_pid, returns the message to print" do
       server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
       %{runners: runners} = server_state
@@ -78,6 +78,22 @@ defmodule BuildPipeline.TerminalMessagesTest do
                suffix: "[Running]",
                line_update: true,
                runner_pid: runner_pid
+             }
+    end
+  end
+
+  describe "running/2 - with verbose true" do
+    test "given runners & a runner_pid, returns the message to print" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(true)
+      %{runners: runners} = server_state
+
+      runner_pid = runners |> Map.keys() |> hd()
+
+      %{command: command} = runners[runner_pid]
+
+      assert TerminalMessages.running(server_state, runner_pid) == %{
+               message: "#{ANSI.magenta()}#{command} [Running]",
+               line_update: false
              }
     end
   end

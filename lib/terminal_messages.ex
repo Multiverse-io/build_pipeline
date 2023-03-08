@@ -11,7 +11,7 @@ defmodule BuildPipeline.TerminalMessages do
     %{runners: runners, messages: pending(runners)}
   end
 
-  def running(%{runners: runners}, runner_pid) do
+  def running(%{verbose: false, runners: runners}, runner_pid) do
     %{command: command} = Map.fetch!(runners, runner_pid)
 
     %{
@@ -20,6 +20,15 @@ defmodule BuildPipeline.TerminalMessages do
       suffix: "[Running]",
       runner_pid: runner_pid,
       line_update: true
+    }
+  end
+
+  def running(%{verbose: true, runners: runners}, runner_pid) do
+    %{command: command} = Map.fetch!(runners, runner_pid)
+
+    %{
+      message: "#{ANSI.magenta()}#{command} [Running]",
+      line_update: false
     }
   end
 
