@@ -1,7 +1,6 @@
 defmodule BuildPipeline.Server do
   use GenServer
-  alias BuildPipeline.{BuildStepRunner, RunnerTerminalOutput}
-  alias IO.ANSI
+  alias BuildPipeline.{BuildStepRunner, TerminalPrinter, TerminalMessages}
 
   @moduledoc false
   @default_genserver_options []
@@ -18,6 +17,7 @@ defmodule BuildPipeline.Server do
     GenServer.start_link(__MODULE__, {setup, parent_pid}, genserver_options)
   end
 
+  # TODO rename setup to config
   @impl true
   def init({setup, parent_pid}) do
     %{
@@ -27,10 +27,13 @@ defmodule BuildPipeline.Server do
 
     runners = init_waiting_runners(build_pipeline, cwd)
 
+    %{runners: runners, messages: messages} = TerminalMessages.runners_pending(runners)
+
+    TerminalPrinter.puts(messages)
+
     state = %{
       runners: runners,
       parent_pid: parent_pid,
-      runner_terminal_output: RunnerTerminalOutput.print_all_pending(runners, setup.setup),
       terminal_width: terminal_width,
       verbose: verbose
     }
@@ -51,6 +54,7 @@ defmodule BuildPipeline.Server do
   end
 
   def handle_cast({:runner_finished, runner_pid, result}, state) do
+    # IO.inpect result
     state
     |> update_completed_runners(runner_pid, result)
     |> continue_unless_step_failed(runner_pid)
@@ -58,10 +62,11 @@ defmodule BuildPipeline.Server do
 
   # https://stackoverflow.com/questions/11283625/overwrite-last-line-on-terminal
   def handle_cast({:runner_starting, runner_pid}, state) do
-    server_state =
-      RunnerTerminalOutput.print_update(state, runner_pid, "[Running]", ANSI.magenta())
+    state
+    |> TerminalMessages.running(runner_pid)
+    |> TerminalPrinter.runner_update(state)
 
-    {:noreply, server_state}
+    {:noreply, state}
   end
 
   @impl true
@@ -99,22 +104,29 @@ defmodule BuildPipeline.Server do
     case Map.fetch!(state.runners, runner_pid) do
       %{exit_code: 0} = result ->
         state
-        |> RunnerTerminalOutput.print_succeeded(result, runner_pid)
+        |> TerminalMessages.succeeded(result, runner_pid)
+        |> TerminalPrinter.runner_update(state)
+
+        state
         |> start_runners_if_able()
         |> finished_if_all_runners_done()
 
       %{exit_code: _non_zero} = result ->
-        state =
-          state
-          |> RunnerTerminalOutput.print_failed(result, runner_pid)
-          |> RunnerTerminalOutput.print_aborted()
-          |> print_runner_output(result)
+        state
+        |> TerminalMessages.failed(result, runner_pid)
+        |> TerminalPrinter.runner_update(state)
+
+        state
+        |> TerminalMessages.abort()
+        |> TerminalPrinter.runner_update(state)
+
+        state = print_runner_output(state, result)
 
         {:stop, :normal, state}
     end
   end
 
-  # TODO move this into RunnerTerminalOutput
+  # TODO move this into TerminalPrinter
   defp print_runner_output(%{verbose: false} = state, result) do
     IO.puts(result.output)
     state
