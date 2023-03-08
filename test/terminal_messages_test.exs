@@ -323,5 +323,30 @@ defmodule BuildPipeline.TerminalMessagesTest do
                }
              ]
     end
+
+    test "with verbose true, the message format is different with line_update false" do
+      runners = %{
+        "fake_pid_1" => %{command: "1", status: :complete},
+        "fake_pid_2" => %{command: "2", status: :incomplete},
+        "fake_pid_3" => %{command: "3", status: :incomplete},
+        "fake_pid_4" => %{command: "4", status: :complete}
+      }
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_verbose(true)
+        |> ServerStateBuilder.with_runners(runners)
+
+      assert TerminalMessages.abort(server_state) == [
+               %{
+                 message: "#{ANSI.magenta()}#{ANSI.crossed_out()}2 [Aborted]",
+                 line_update: false
+               },
+               %{
+                 message: "#{ANSI.magenta()}#{ANSI.crossed_out()}3 [Aborted]",
+                 line_update: false
+               }
+             ]
+    end
   end
 end

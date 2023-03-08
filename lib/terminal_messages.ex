@@ -86,47 +86,26 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def abort(%{runners: runners} = _server_state) do
+  def abort(%{verbose: verbose, runners: runners} = _server_state) do
     runners
     |> Enum.reject(fn {_runner_pid, %{status: status}} -> status == :complete end)
     |> Enum.map(fn {runner_pid, %{command: command}} ->
-      %{
-        ansi_prefix: "#{ANSI.magenta()}#{ANSI.crossed_out()}",
-        prefix: command,
-        suffix: "[Aborted]",
-        runner_pid: runner_pid,
-        line_update: true
-      }
+      if verbose do
+        %{
+          message: "#{ANSI.magenta()}#{ANSI.crossed_out()}#{command} [Aborted]",
+          line_update: false
+        }
+      else
+        %{
+          ansi_prefix: "#{ANSI.magenta()}#{ANSI.crossed_out()}",
+          prefix: command,
+          suffix: "[Aborted]",
+          runner_pid: runner_pid,
+          line_update: true
+        }
+      end
     end)
   end
-
-  # TODO sort verbose out
-  # def print_succeeded(%{verbose: true} = server_state, result, runner_pid) do
-  #  {finished_message, ansi_prefix} = runner_finished_in_duration_message(result)
-
-  #  message = """
-  #  #{ANSI.green()}---------------------------------------------------------------------
-  #  #{finished_message}
-
-  #  #{result.output}
-  #  #{ANSI.green()}---------------------------------------------------------------------#{ANSI.reset()}
-  #  """
-
-  #  print_update(server_state, runner_pid, message, ansi_prefix)
-  # end
-  # def print_failed(%{verbose: true} = server_state, result, runner_pid) do
-  #  {message, ansi_prefix} = runner_failed_duration_message(result)
-
-  #  message = """
-  #  #{ansi_prefix}---------------------------------------------------------------------
-  #  #{message}
-
-  #  #{result.output}
-  #  #{ansi_prefix}---------------------------------------------------------------------#{ANSI.reset()}
-  #  """
-
-  #  print_update(server_state, runner_pid, message, ansi_prefix)
-  # end
 
   defp pending(runners) do
     runners
