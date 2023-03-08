@@ -1,15 +1,6 @@
 defmodule BuildPipeline.TerminalPrinter do
   alias IO.ANSI
 
-  # TODO write a test
-  def puts(messages) do
-    if should_print_runner_output?() do
-      Enum.each(messages, fn %{ansi_prefix: ansi_prefix, prefix: prefix, suffix: suffix} ->
-        IO.puts(ansi_prefix <> prefix <> " " <> suffix <> ANSI.reset())
-      end)
-    end
-  end
-
   # TODO write tests
   def runner_update(messages, server_state) when is_list(messages) do
     Enum.each(messages, fn message -> runner_update(message, server_state) end)
@@ -33,7 +24,6 @@ defmodule BuildPipeline.TerminalPrinter do
     end
   end
 
-  ## TODO this makes no sense since message is just the suffix now! It's nonsense! fix it!
   def runner_update(%{line_update: false, message: message}, _server_state) do
     if should_print_runner_output?() do
       IO.puts(message <> ANSI.reset())

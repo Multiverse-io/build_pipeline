@@ -17,7 +17,6 @@ defmodule BuildPipeline.Server do
     GenServer.start_link(__MODULE__, {setup, parent_pid}, genserver_options)
   end
 
-  # TODO rename setup to config
   @impl true
   def init({setup, parent_pid}) do
     %{
@@ -27,16 +26,16 @@ defmodule BuildPipeline.Server do
 
     runners = init_waiting_runners(build_pipeline, cwd)
 
-    %{runners: runners, messages: messages} = TerminalMessages.runners_pending(runners)
-
-    TerminalPrinter.puts(messages)
-
     state = %{
       runners: runners,
       parent_pid: parent_pid,
       terminal_width: terminal_width,
       verbose: verbose
     }
+
+    runners
+    |> TerminalMessages.pending()
+    |> TerminalPrinter.runner_update(state)
 
     {:ok, state, {:continue, :start_runners}}
   end
@@ -120,20 +119,12 @@ defmodule BuildPipeline.Server do
         |> TerminalMessages.abort()
         |> TerminalPrinter.runner_update(state)
 
-        state = print_runner_output(state, result)
+        state
+        |> TerminalMessages.failed_output(result)
+        |> TerminalPrinter.runner_update(state)
 
         {:stop, :normal, state}
     end
-  end
-
-  # TODO move this into TerminalPrinter
-  defp print_runner_output(%{verbose: false} = state, result) do
-    IO.puts(result.output)
-    state
-  end
-
-  defp print_runner_output(%{verbose: true} = state, _result) do
-    state
   end
 
   defp finished_if_all_runners_done(state) do
@@ -167,7 +158,11 @@ defmodule BuildPipeline.Server do
     Enum.reduce(build_pipeline, %{}, fn build_step, runners ->
       {:ok, runner_pid} = BuildStepRunner.start_link(build_step, self(), cwd)
 
-      build_step = Map.put(build_step, :status, :incomplete)
+      build_step =
+        build_step
+        |> Map.put(:status, :incomplete)
+        |> Map.put(:terminal_line_number, build_step.order + 1)
+
       Map.put(runners, runner_pid, build_step)
     end)
   end

@@ -1,14 +1,12 @@
 defmodule BuildPipeline.TerminalMessages do
   alias IO.ANSI
 
-  # TODO move the line numbering out into the server. or at least separate runner updating out of here
-  def runners_pending(runners) do
-    runners =
-      Map.new(runners, fn {pid, build_step} ->
-        {pid, Map.put(build_step, :terminal_line_number, build_step.order + 1)}
-      end)
-
-    %{runners: runners, messages: pending(runners)}
+  def pending(runners) do
+    runners
+    |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
+    |> Enum.map(fn {_pid, %{command: command}} ->
+      %{message: "#{ANSI.light_magenta()}#{command} [Pending]", line_update: false}
+    end)
   end
 
   def running(%{verbose: false, runners: runners}, runner_pid) do
@@ -38,7 +36,7 @@ defmodule BuildPipeline.TerminalMessages do
     %{
       ansi_prefix: ANSI.green(),
       prefix: command,
-      suffix: "[Finished in #{duration_message(duration_in_microseconds)}] ✔ ",
+      suffix: "[Succeeded in #{duration_message(duration_in_microseconds)}] ✔ ",
       runner_pid: runner_pid,
       line_update: true
     }
@@ -50,9 +48,9 @@ defmodule BuildPipeline.TerminalMessages do
 
     message = """
     #{ANSI.green()}---------------------------------------------------------------------
-    #{command} [Finished in #{duration_message(duration_in_microseconds)}] ✔
+    #{command} [Succeeded in #{duration_message(duration_in_microseconds)}] ✔
 
-    #{output}
+    #{ANSI.reset()}#{output}
     #{ANSI.green()}---------------------------------------------------------------------#{ANSI.reset()}
     """
 
@@ -65,9 +63,9 @@ defmodule BuildPipeline.TerminalMessages do
 
     message = """
     #{ANSI.red()}---------------------------------------------------------------------
-    #{command} [Finished in #{duration_message(duration_in_microseconds)}] ✘
+    #{command} [Failed in #{duration_message(duration_in_microseconds)}] ✘
 
-    #{output}
+    #{ANSI.reset()}#{output}
     #{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}
     """
 
@@ -80,7 +78,7 @@ defmodule BuildPipeline.TerminalMessages do
     %{
       ansi_prefix: ANSI.red(),
       prefix: command,
-      suffix: "[Finished in #{duration_message(duration_in_microseconds)}] ✘ ",
+      suffix: "[Failed in #{duration_message(duration_in_microseconds)}] ✘ ",
       runner_pid: runner_pid,
       line_update: true
     }
@@ -107,12 +105,15 @@ defmodule BuildPipeline.TerminalMessages do
     end)
   end
 
-  defp pending(runners) do
-    runners
-    |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
-    |> Enum.map(fn {_pid, %{command: command}} ->
-      %{ansi_prefix: ANSI.light_magenta(), prefix: command, suffix: "[Pending]"}
-    end)
+  def failed_output(%{verbose: true}, _runner) do
+    []
+  end
+
+  def failed_output(%{verbose: false}, %{output: output}) do
+    %{
+      message: output,
+      line_update: false
+    }
   end
 
   defp duration_message(duration_in_microseconds) do

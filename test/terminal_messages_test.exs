@@ -4,30 +4,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
   alias BuildPipeline.Builders.ServerStateBuilder
   alias BuildPipeline.TerminalMessages
 
-  describe "runners_pending/2" do
+  describe "pending/2" do
     test "given runners, returns runners with terminal line numbers & messages" do
-      initial_runners = %{
-        "fake_pid_2" => %{
-          build_step_name: "approachHuman",
-          command: "echo walk over",
-          command_env_vars: [],
-          command_type: :shell_command,
-          depends_on: MapSet.new([]),
-          order: 1,
-          status: :incomplete
-        },
-        "fake_pid_1" => %{
-          build_step_name: "sayHello",
-          command: "echo hello",
-          command_env_vars: [],
-          command_type: :shell_command,
-          depends_on: MapSet.new([]),
-          order: 0,
-          status: :incomplete
-        }
-      }
-
-      expected_runners = %{
+      runners = %{
         "fake_pid_2" => %{
           build_step_name: "approachHuman",
           command: "echo walk over",
@@ -51,15 +30,13 @@ defmodule BuildPipeline.TerminalMessagesTest do
       }
 
       expected_messages = [
-        %{ansi_prefix: ANSI.light_magenta(), prefix: "echo hello", suffix: "[Pending]"},
-        %{ansi_prefix: ANSI.light_magenta(), prefix: "echo walk over", suffix: "[Pending]"}
+        # %{ansi_prefix: ANSI.light_magenta(), prefix: "echo hello", suffix: "[Pending]"},
+        # %{ansi_prefix: ANSI.light_magenta(), prefix: "echo walk over", suffix: "[Pending]"}
+        %{message: "#{ANSI.light_magenta()}echo hello [Pending]", line_update: false},
+        %{message: "#{ANSI.light_magenta()}echo walk over [Pending]", line_update: false}
       ]
 
-      assert %{runners: runners, messages: messages} =
-               TerminalMessages.runners_pending(initial_runners)
-
-      assert expected_runners == runners
-      assert messages == expected_messages
+      assert TerminalMessages.pending(runners) == expected_messages
     end
   end
 
@@ -99,7 +76,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
   end
 
   describe "succeeded/2 - with verbose true" do
-    test "returns the failed output in a big block" do
+    test "returns the success output in a big block" do
       server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(true)
 
       runner = %{
@@ -112,7 +89,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.succeeded(server_state, runner, "fake_pid") == %{
                line_update: false,
                message:
-                 "#{ANSI.green()}---------------------------------------------------------------------\necho hi [Finished in 123 μs] ✔\n\nhi\n\n#{ANSI.green()}---------------------------------------------------------------------#{ANSI.reset()}\n"
+                 "#{ANSI.green()}---------------------------------------------------------------------\necho hi [Succeeded in 123 μs] ✔\n\n#{ANSI.reset()}hi\n\n#{ANSI.green()}---------------------------------------------------------------------#{ANSI.reset()}\n"
              }
     end
   end
@@ -131,7 +108,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.succeeded(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.green(),
                prefix: "echo hi",
-               suffix: "[Finished in 123 μs] ✔ ",
+               suffix: "[Succeeded in 123 μs] ✔ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -150,7 +127,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.succeeded(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.green(),
                prefix: "echo hi",
-               suffix: "[Finished in 2 ms] ✔ ",
+               suffix: "[Succeeded in 2 ms] ✔ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -169,7 +146,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.succeeded(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.green(),
                prefix: "echo hi",
-               suffix: "[Finished in 1.4 s] ✔ ",
+               suffix: "[Succeeded in 1.4 s] ✔ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -188,7 +165,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.succeeded(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.green(),
                prefix: "echo hi",
-               suffix: "[Finished in 1.0 min] ✔ ",
+               suffix: "[Succeeded in 1.0 min] ✔ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -209,7 +186,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.failed(server_state, runner, "fake_pid") == %{
                line_update: false,
                message:
-                 "#{ANSI.red()}---------------------------------------------------------------------\necho hi [Finished in 123 μs] ✘\n\nit failed\n\n#{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}\n"
+                 "#{ANSI.red()}---------------------------------------------------------------------\necho hi [Failed in 123 μs] ✘\n\n#{ANSI.reset()}it failed\n\n#{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}\n"
              }
     end
   end
@@ -228,7 +205,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.failed(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.red(),
                prefix: "echo hi",
-               suffix: "[Finished in 123 μs] ✘ ",
+               suffix: "[Failed in 123 μs] ✘ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -247,7 +224,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.failed(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.red(),
                prefix: "echo hi",
-               suffix: "[Finished in 2 ms] ✘ ",
+               suffix: "[Failed in 2 ms] ✘ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -266,7 +243,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.failed(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.red(),
                prefix: "echo hi",
-               suffix: "[Finished in 1.4 s] ✘ ",
+               suffix: "[Failed in 1.4 s] ✘ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -285,7 +262,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.failed(server_state, runner, "fake_pid") == %{
                ansi_prefix: ANSI.red(),
                prefix: "echo hi",
-               suffix: "[Finished in 1.0 min] ✘ ",
+               suffix: "[Failed in 1.0 min] ✘ ",
                line_update: true,
                runner_pid: "fake_pid"
              }
@@ -347,6 +324,38 @@ defmodule BuildPipeline.TerminalMessagesTest do
                  line_update: false
                }
              ]
+    end
+  end
+
+  describe "failed_output/1" do
+    test "with verbose true" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(true)
+
+      runner = %{
+        command: "echo hi",
+        exit_code: 1,
+        duration_in_microseconds: 60_000_001,
+        output: "it failed\n"
+      }
+
+      assert TerminalMessages.failed_output(server_state, runner) == []
+    end
+
+    test "with verbose false" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+
+      runner = %{
+        command: "echo hi",
+        exit_code: 1,
+        duration_in_microseconds: 60_000_001,
+        output: "it worked!\n"
+      }
+
+      assert TerminalMessages.failed_output(server_state, runner) ==
+               %{
+                 message: "it worked!\n",
+                 line_update: false
+               }
     end
   end
 end

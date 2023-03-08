@@ -23,23 +23,23 @@ defmodule BuildPipelineTest do
 
       assert output =~ "echo tires [Pending]"
       assert output =~ "echo tires [Running]"
-      assert output =~ "echo tires [Finished in"
+      assert output =~ "echo tires [Succeeded in"
 
       assert output =~ "echo fuel [Pending]"
       assert output =~ "echo fuel [Running]"
-      assert output =~ "echo fuel [Finished in"
+      assert output =~ "echo fuel [Succeeded in"
 
       assert output =~ "echo car works [Pending]"
       assert output =~ "echo car works [Running]"
-      assert output =~ "echo car works [Finished in"
+      assert output =~ "echo car works [Succeeded in"
 
       assert output =~ "echo walk over [Pending]"
       assert output =~ "echo walk over [Running]"
-      assert output =~ "echo walk over [Finished in"
+      assert output =~ "echo walk over [Succeeded in"
 
       assert output =~ "echo hello [Pending]"
       assert output =~ "echo hello [Running]"
-      assert output =~ "echo hello [Finished in"
+      assert output =~ "echo hello [Succeeded in"
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end

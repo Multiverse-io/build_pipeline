@@ -14,7 +14,7 @@ defmodule Mix.Tasks.BuildPipeline.RunTest do
           assert :ok == Run.run(["--cwd", "example_projects/complex_yet_functioning"])
         end)
 
-      assert Regex.match?(~r|echo tires \[Finished in|, output)
+      assert Regex.match?(~r|echo tires \[Succeeded in|, output)
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
