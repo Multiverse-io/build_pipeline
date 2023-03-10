@@ -1,6 +1,6 @@
 defmodule BuildPipeline.LineUpdateTerminalMessage do
   alias IO.ANSI
-  # TODO rename this & the test module - remove the word builder
+
   def build(%{line_update: true} = message, server_state) do
     %{ansi_prefix: ansi_prefix, prefix: prefix, suffix: suffix, runner_pid: runner_pid} = message
     %{runners: runners, terminal_width: terminal_width} = server_state

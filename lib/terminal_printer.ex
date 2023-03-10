@@ -2,7 +2,6 @@ defmodule BuildPipeline.TerminalPrinter do
   alias IO.ANSI
   alias BuildPipeline.LineUpdateTerminalMessage
 
-  # TODO write tests
   def runner_update(messages, server_state) when is_list(messages) do
     Enum.each(messages, fn message -> runner_update(message, server_state) end)
   end
