@@ -19,4 +19,8 @@ defmodule BuildPipeline.Builders.ServerStateBuilder do
   def with_runners(server_state, runners) do
     update_in(server_state, [:runners], fn _ -> runners end)
   end
+
+  def with_terminal_width(server_state, terminal_width) do
+    update_in(server_state, [:terminal_width], fn _ -> terminal_width end)
+  end
 end
