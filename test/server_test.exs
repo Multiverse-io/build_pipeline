@@ -171,7 +171,7 @@ defmodule BuildPipeline.ServerTest do
       end)
     end
 
-    test "with verbose true, returns the output of the commands given" do
+    test "with mode = verbose, returns the output of the commands given" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
@@ -200,7 +200,7 @@ defmodule BuildPipeline.ServerTest do
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
 
-    test "with verbose false, and a step fails, we output its output" do
+    test "with mode = normal, and a step fails, we output its output" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
@@ -228,7 +228,7 @@ defmodule BuildPipeline.ServerTest do
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
 
-    test "with verbose true, and a step fails, we output its output" do
+    test "with mode = verbose, and a step fails, we output its output" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
