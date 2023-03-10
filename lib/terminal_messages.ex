@@ -9,7 +9,7 @@ defmodule BuildPipeline.TerminalMessages do
 
       truncated_msg =
         if String.length(message) > terminal_width do
-          truncated_msg = String.slice(message, 0..(terminal_width - 1))
+          String.slice(message, 0..(terminal_width - 1))
         else
           message
         end
