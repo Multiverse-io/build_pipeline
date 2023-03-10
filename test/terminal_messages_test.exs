@@ -5,7 +5,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
   alias BuildPipeline.TerminalMessages
 
   describe "pending/2" do
-    test "given runners, returns runners with terminal line numbers & messages" do
+    test "with verbose = false returns runners with terminal line numbers & messages" do
       runners = %{
         "fake_pid_2" => %{
           build_step_name: "approachHuman",
@@ -29,14 +29,55 @@ defmodule BuildPipeline.TerminalMessagesTest do
         }
       }
 
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_runners(runners)
+        |> ServerStateBuilder.with_verbose(false)
+
       expected_messages = [
-        # %{ansi_prefix: ANSI.light_magenta(), prefix: "echo hello", suffix: "[Pending]"},
-        # %{ansi_prefix: ANSI.light_magenta(), prefix: "echo walk over", suffix: "[Pending]"}
         %{message: "#{ANSI.light_magenta()}echo hello [Pending]", line_update: false},
         %{message: "#{ANSI.light_magenta()}echo walk over [Pending]", line_update: false}
       ]
 
-      assert TerminalMessages.pending(runners) == expected_messages
+      assert TerminalMessages.pending(server_state) == expected_messages
+    end
+
+    test "with verbose = true and a really small terminal, we truncate the message" do
+      runners = %{
+        "fake_pid_2" => %{
+          build_step_name: "approachHuman",
+          command: "echo walk over",
+          command_env_vars: [],
+          command_type: :shell_command,
+          depends_on: MapSet.new([]),
+          order: 1,
+          status: :incomplete,
+          terminal_line_number: 2
+        },
+        "fake_pid_1" => %{
+          build_step_name: "sayHello",
+          command: "echo hello",
+          command_env_vars: [],
+          command_type: :shell_command,
+          depends_on: MapSet.new([]),
+          order: 0,
+          status: :incomplete,
+          terminal_line_number: 1
+        }
+      }
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_runners(runners)
+        |> ServerStateBuilder.with_verbose(true)
+        |> ServerStateBuilder.with_terminal_width(10)
+
+      expected_messages = [
+        %{message: "#{ANSI.light_magenta()}echo hello", line_update: false},
+        %{message: "#{ANSI.light_magenta()}echo walk ", line_update: false}
+      ]
+
+      assert TerminalMessages.pending(server_state) == expected_messages
     end
   end
 
@@ -324,6 +365,33 @@ defmodule BuildPipeline.TerminalMessagesTest do
                  line_update: false
                }
              ]
+    end
+
+    test "with verbose = true and a terminal exactly as wide as the message, we don't truncate the message" do
+      runners = %{
+        "fake_pid_2" => %{
+          build_step_name: "approachHuman",
+          command: "1234",
+          command_env_vars: [],
+          command_type: :shell_command,
+          depends_on: MapSet.new([]),
+          order: 1,
+          status: :incomplete,
+          terminal_line_number: 2
+        }
+      }
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_runners(runners)
+        |> ServerStateBuilder.with_verbose(true)
+        |> ServerStateBuilder.with_terminal_width(14)
+
+      expected_messages = [
+        %{message: "#{ANSI.light_magenta()}1234 [Pending]", line_update: false}
+      ]
+
+      assert TerminalMessages.pending(server_state) == expected_messages
     end
   end
 

@@ -33,7 +33,7 @@ defmodule BuildPipeline.Server do
       verbose: verbose
     }
 
-    runners
+    state
     |> TerminalMessages.pending()
     |> TerminalPrinter.runner_update(state)
 

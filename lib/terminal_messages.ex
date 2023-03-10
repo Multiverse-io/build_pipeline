@@ -1,11 +1,20 @@
 defmodule BuildPipeline.TerminalMessages do
   alias IO.ANSI
 
-  def pending(runners) do
+  def pending(%{runners: runners, terminal_width: terminal_width}) do
     runners
     |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
     |> Enum.map(fn {_pid, %{command: command}} ->
-      %{message: "#{ANSI.light_magenta()}#{command} [Pending]", line_update: false}
+      message = "#{command} [Pending]"
+
+      truncated_msg =
+        if String.length(message) > terminal_width do
+          truncated_msg = String.slice(message, 0..(terminal_width - 1))
+        else
+          message
+        end
+
+      %{message: "#{ANSI.light_magenta()}#{truncated_msg}", line_update: false}
     end)
   end
 
