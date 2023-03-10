@@ -44,6 +44,44 @@ defmodule BuildPipelineTest do
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
 
+    test "with mode = debug, can show runner output on the screen & run to completion" do
+      original_env = Application.get_env(:build_pipeline, :print_runner_output)
+
+      Application.put_env(:build_pipeline, :print_runner_output, true)
+
+      output =
+        capture_io(fn ->
+          assert :ok ==
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./example_projects/complex_yet_functioning",
+                     "--debug"
+                   ])
+        end)
+
+      assert output =~ "echo tires [Pending]"
+      assert output =~ "echo tires [Running]"
+      assert output =~ "echo tires [Succeeded in"
+
+      assert output =~ "echo fuel [Pending]"
+      assert output =~ "echo fuel [Running]"
+      assert output =~ "echo fuel [Succeeded in"
+
+      assert output =~ "echo car works [Pending]"
+      assert output =~ "echo car works [Running]"
+      assert output =~ "echo car works [Succeeded in"
+
+      assert output =~ "echo walk over [Pending]"
+      assert output =~ "echo walk over [Running]"
+      assert output =~ "echo walk over [Succeeded in"
+
+      assert output =~ "echo hello [Pending]"
+      assert output =~ "echo hello [Running]"
+      assert output =~ "echo hello [Succeeded in"
+
+      Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
+
     test "returns error if config file parsing fails" do
       output =
         capture_io(fn ->

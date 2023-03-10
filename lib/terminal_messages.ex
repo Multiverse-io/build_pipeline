@@ -30,7 +30,7 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def running(%{mode: :verbose, runners: runners}, runner_pid) do
+  def running(%{mode: mode, runners: runners}, runner_pid) when mode in [:debug, :verbose] do
     %{command: command} = Map.fetch!(runners, runner_pid)
 
     %{
@@ -51,7 +51,7 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def succeeded(%{mode: :verbose}, runner, _runner_pid) do
+  def succeeded(%{mode: mode}, runner, _runner_pid) when mode in [:verbose, :debug] do
     %{command: command, duration_in_microseconds: duration_in_microseconds, output: output} =
       runner
 
@@ -81,6 +81,19 @@ defmodule BuildPipeline.TerminalMessages do
     %{line_update: false, message: message}
   end
 
+  def failed(%{mode: :debug} = _server_state, runner, _runner_pid) do
+    %{command: command, duration_in_microseconds: duration_in_microseconds} = runner
+
+    message = """
+    #{ANSI.red()}---------------------------------------------------------------------
+    #{command} [Failed in #{duration_message(duration_in_microseconds)}] ✘
+
+    #{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}
+    """
+
+    %{line_update: false, message: message}
+  end
+
   def failed(%{mode: :normal} = _server_state, runner, runner_pid) do
     %{command: command, duration_in_microseconds: duration_in_microseconds} = runner
 
@@ -97,24 +110,11 @@ defmodule BuildPipeline.TerminalMessages do
     runners
     |> Enum.reject(fn {_runner_pid, %{status: status}} -> status == :complete end)
     |> Enum.map(fn {runner_pid, %{command: command}} ->
-      if mode == :verbose do
-        %{
-          message: "#{ANSI.magenta()}#{ANSI.crossed_out()}#{command} [Aborted]",
-          line_update: false
-        }
-      else
-        %{
-          ansi_prefix: "#{ANSI.magenta()}#{ANSI.crossed_out()}",
-          prefix: command,
-          suffix: "[Aborted]",
-          runner_pid: runner_pid,
-          line_update: true
-        }
-      end
+      abort_message(mode, command, runner_pid)
     end)
   end
 
-  def failed_output(%{mode: :verbose}, _runner) do
+  def failed_output(%{mode: mode}, _runner) when mode in [:verbose, :debug] do
     []
   end
 
@@ -122,6 +122,23 @@ defmodule BuildPipeline.TerminalMessages do
     %{
       message: output,
       line_update: false
+    }
+  end
+
+  defp abort_message(mode, command, _) when mode in [:verbose, :debug] do
+    %{
+      message: "#{ANSI.magenta()}#{ANSI.crossed_out()}#{command} [Aborted]",
+      line_update: false
+    }
+  end
+
+  defp abort_message(:normal, command, runner_pid) do
+    %{
+      ansi_prefix: "#{ANSI.magenta()}#{ANSI.crossed_out()}",
+      prefix: command,
+      suffix: "[Aborted]",
+      runner_pid: runner_pid,
+      line_update: true
     }
   end
 

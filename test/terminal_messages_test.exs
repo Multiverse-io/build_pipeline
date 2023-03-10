@@ -116,6 +116,22 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
+  describe "running/2 - with mode = debug" do
+    test "given runners & a runner_pid, returns the message to print" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:debug)
+      %{runners: runners} = server_state
+
+      runner_pid = runners |> Map.keys() |> hd()
+
+      %{command: command} = runners[runner_pid]
+
+      assert TerminalMessages.running(server_state, runner_pid) == %{
+               message: "#{ANSI.magenta()}#{command} [Running]",
+               line_update: false
+             }
+    end
+  end
+
   describe "succeeded/2 - with mode = verbose" do
     test "returns the success output in a big block" do
       server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:verbose)
@@ -132,6 +148,28 @@ defmodule BuildPipeline.TerminalMessagesTest do
                message:
                  "#{ANSI.green()}---------------------------------------------------------------------\necho hi [Succeeded in 123 μs] ✔\n\n#{ANSI.reset()}hi\n\n#{ANSI.green()}---------------------------------------------------------------------#{ANSI.reset()}\n"
              }
+    end
+  end
+
+  describe "succeeded/2 - with mode = debug" do
+    test "puts the same result verbose mode does" do
+      verbose_server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_mode(:verbose)
+
+      debug_server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_mode(:debug)
+
+      runner = %{
+        command: "echo hi",
+        exit_code: 1,
+        duration_in_microseconds: 123,
+        output: "hi\n"
+      }
+
+      assert TerminalMessages.succeeded(verbose_server_state, runner, "fake_pid") ==
+               TerminalMessages.succeeded(debug_server_state, runner, "fake_pid")
     end
   end
 
@@ -230,6 +268,25 @@ defmodule BuildPipeline.TerminalMessagesTest do
                line_update: false,
                message:
                  "#{ANSI.red()}---------------------------------------------------------------------\necho hi [Failed in 123 μs] ✘\n\n#{ANSI.reset()}it failed\n\n#{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}\n"
+             }
+    end
+  end
+
+  describe "failed/2 - with mode = debug" do
+    test "returns only the failed command name and duraction" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:debug)
+
+      runner = %{
+        command: "echo hi",
+        exit_code: 1,
+        duration_in_microseconds: 123,
+        output: "it failed\n"
+      }
+
+      assert TerminalMessages.failed(server_state, runner, "fake_pid") == %{
+               message:
+                 "\e[31m---------------------------------------------------------------------\necho hi [Failed in 123 μs] ✘\n\n\e[31m---------------------------------------------------------------------\e[0m\n",
+               line_update: false
              }
     end
   end
@@ -395,11 +452,46 @@ defmodule BuildPipeline.TerminalMessagesTest do
 
       assert TerminalMessages.pending(server_state) == expected_messages
     end
+
+    test "with mode = debug, returns the same output as mode = verbose" do
+      runners = %{
+        "fake_pid_1" => %{command: "1", status: :complete},
+        "fake_pid_2" => %{command: "2", status: :incomplete},
+        "fake_pid_3" => %{command: "3", status: :incomplete},
+        "fake_pid_4" => %{command: "4", status: :complete}
+      }
+
+      verbose_server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_mode(:verbose)
+        |> ServerStateBuilder.with_runners(runners)
+
+      debug_server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_mode(:debug)
+        |> ServerStateBuilder.with_runners(runners)
+
+      assert TerminalMessages.abort(verbose_server_state) ==
+               TerminalMessages.abort(debug_server_state)
+    end
   end
 
   describe "failed_output/1" do
     test "with mode = verbose" do
       server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:verbose)
+
+      runner = %{
+        command: "echo hi",
+        exit_code: 1,
+        duration_in_microseconds: 60_000_001,
+        output: "it failed\n"
+      }
+
+      assert TerminalMessages.failed_output(server_state, runner) == []
+    end
+
+    test "with mode = debug" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:debug)
 
       runner = %{
         command: "echo hi",
