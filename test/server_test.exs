@@ -188,7 +188,7 @@ defmodule BuildPipeline.ServerTest do
       server_setup =
         ServerSetupBuilder.build()
         |> ServerSetupBuilder.with_build_pipeline([build_step])
-        |> ServerSetupBuilder.with_verbose(true)
+        |> ServerSetupBuilder.with_mode(:verbose)
 
       output =
         capture_io(fn ->
@@ -245,7 +245,7 @@ defmodule BuildPipeline.ServerTest do
       server_setup =
         ServerSetupBuilder.build()
         |> ServerSetupBuilder.with_build_pipeline([build_step])
-        |> ServerSetupBuilder.with_verbose(true)
+        |> ServerSetupBuilder.with_mode(:verbose)
 
       output =
         capture_io(fn ->
@@ -313,7 +313,7 @@ defmodule BuildPipeline.ServerTest do
 
     ServerSetupBuilder.build()
     |> ServerSetupBuilder.with_cwd("./example_projects/complex_yet_functioning")
-    |> ServerSetupBuilder.with_verbose(false)
+    |> ServerSetupBuilder.with_mode(:normal)
     |> ServerSetupBuilder.with_build_pipeline(build_pipeline)
   end
 
@@ -371,7 +371,7 @@ defmodule BuildPipeline.ServerTest do
 
     ServerSetupBuilder.build()
     |> ServerSetupBuilder.with_cwd("./example_projects/complex_yet_functioning")
-    |> ServerSetupBuilder.with_verbose(false)
+    |> ServerSetupBuilder.with_mode(:normal)
     |> ServerSetupBuilder.with_build_pipeline(build_pipeline)
   end
 end

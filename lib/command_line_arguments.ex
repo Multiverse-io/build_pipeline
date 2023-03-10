@@ -1,6 +1,6 @@
 defmodule BuildPipeline.CommandLineArguments do
   @moduledoc false
-  @default_setup %{cwd: ".", verbose: false}
+  @default_setup %{cwd: ".", mode: :normal}
   @cwd "--cwd"
   @verbose "--verbose"
   @usage_instructions """
@@ -20,7 +20,7 @@ defmodule BuildPipeline.CommandLineArguments do
   end
 
   def parse(setup, [@verbose | rest]) do
-    parse(Map.put(setup, :verbose, true), rest)
+    parse(Map.put(setup, :mode, :verbose), rest)
   end
 
   def parse(_step, nonsense) do

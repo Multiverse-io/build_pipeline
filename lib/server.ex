@@ -21,7 +21,7 @@ defmodule BuildPipeline.Server do
   def init({setup, parent_pid}) do
     %{
       build_pipeline: build_pipeline,
-      setup: %{verbose: verbose, cwd: cwd, terminal_width: terminal_width}
+      setup: %{mode: mode, cwd: cwd, terminal_width: terminal_width}
     } = setup
 
     runners = init_waiting_runners(build_pipeline, cwd)
@@ -30,7 +30,7 @@ defmodule BuildPipeline.Server do
       runners: runners,
       parent_pid: parent_pid,
       terminal_width: terminal_width,
-      verbose: verbose
+      mode: mode
     }
 
     state

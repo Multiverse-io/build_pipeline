@@ -5,7 +5,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
   alias BuildPipeline.TerminalMessages
 
   describe "pending/2" do
-    test "with verbose = false returns runners with terminal line numbers & messages" do
+    test "with mode = verbose returns runners with terminal line numbers & messages" do
       runners = %{
         "fake_pid_2" => %{
           build_step_name: "approachHuman",
@@ -32,7 +32,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       server_state =
         ServerStateBuilder.build()
         |> ServerStateBuilder.with_runners(runners)
-        |> ServerStateBuilder.with_verbose(false)
+        |> ServerStateBuilder.with_mode(:normal)
 
       expected_messages = [
         %{message: "#{ANSI.light_magenta()}echo hello [Pending]", line_update: false},
@@ -42,7 +42,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.pending(server_state) == expected_messages
     end
 
-    test "with verbose = true and a really small terminal, we truncate the message" do
+    test "with mode = verbose and a really small terminal, we truncate the message" do
       runners = %{
         "fake_pid_2" => %{
           build_step_name: "approachHuman",
@@ -69,7 +69,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       server_state =
         ServerStateBuilder.build()
         |> ServerStateBuilder.with_runners(runners)
-        |> ServerStateBuilder.with_verbose(true)
+        |> ServerStateBuilder.with_mode(:verbose)
         |> ServerStateBuilder.with_terminal_width(10)
 
       expected_messages = [
@@ -81,9 +81,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
-  describe "running/2 - with verbose false" do
+  describe "running/2 - with mode = normal" do
     test "given runners & a runner_pid, returns the message to print" do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
       %{runners: runners} = server_state
 
       runner_pid = runners |> Map.keys() |> hd()
@@ -100,9 +100,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
-  describe "running/2 - with verbose true" do
+  describe "running/2 - with mode = verbose" do
     test "given runners & a runner_pid, returns the message to print" do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(true)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:verbose)
       %{runners: runners} = server_state
 
       runner_pid = runners |> Map.keys() |> hd()
@@ -116,9 +116,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
-  describe "succeeded/2 - with verbose true" do
+  describe "succeeded/2 - with mode = verbose" do
     test "returns the success output in a big block" do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(true)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:verbose)
 
       runner = %{
         command: "echo hi",
@@ -135,9 +135,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
-  describe "succeeded/2 - with verbose false" do
+  describe "succeeded/2 - with mode = normal" do
     test "given runner result returns the success message in μs when duration < 1ms " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -156,7 +156,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
 
     test "given runner result returns the success message in ms when 1ms < duration < 1s " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -175,7 +177,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
 
     test "given runner result returns the success message in s when 1s < duration < 1min " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -194,7 +196,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
 
     test "given runner result returns the success message in min when duration > 1min " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -213,9 +215,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
-  describe "failed/2 - with verbose true" do
+  describe "failed/2 - with mode = verbose" do
     test "returns the failed output in a big block" do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(true)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:verbose)
 
       runner = %{
         command: "echo hi",
@@ -232,9 +234,9 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
   end
 
-  describe "failed/2 - with verbose false" do
+  describe "failed/2 - with mode = normal" do
     test "given runner result, returns the failed message in μs when duration < 1ms " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -253,7 +255,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
 
     test "given runner result, returns the failed message in ms when 1ms < duration < 1s " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -272,7 +274,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
 
     test "given runner result, returns the failed message in s when 1s < duration < 1min " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -291,7 +293,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
 
     test "given runner result, returns the failed message in min when duration > 1min " do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",
@@ -321,7 +323,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
 
       server_state =
         ServerStateBuilder.build()
-        |> ServerStateBuilder.with_verbose(false)
+        |> ServerStateBuilder.with_mode(:normal)
         |> ServerStateBuilder.with_runners(runners)
 
       assert TerminalMessages.abort(server_state) == [
@@ -342,7 +344,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
              ]
     end
 
-    test "with verbose true, the message format is different with line_update false" do
+    test "with mode = verbose, the message format is different with line_update false" do
       runners = %{
         "fake_pid_1" => %{command: "1", status: :complete},
         "fake_pid_2" => %{command: "2", status: :incomplete},
@@ -352,7 +354,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
 
       server_state =
         ServerStateBuilder.build()
-        |> ServerStateBuilder.with_verbose(true)
+        |> ServerStateBuilder.with_mode(:verbose)
         |> ServerStateBuilder.with_runners(runners)
 
       assert TerminalMessages.abort(server_state) == [
@@ -367,7 +369,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
              ]
     end
 
-    test "with verbose = true and a terminal exactly as wide as the message, we don't truncate the message" do
+    test "with mode = verbose and a terminal exactly as wide as the message, we don't truncate the message" do
       runners = %{
         "fake_pid_2" => %{
           build_step_name: "approachHuman",
@@ -384,7 +386,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
       server_state =
         ServerStateBuilder.build()
         |> ServerStateBuilder.with_runners(runners)
-        |> ServerStateBuilder.with_verbose(true)
+        |> ServerStateBuilder.with_mode(:verbose)
         |> ServerStateBuilder.with_terminal_width(14)
 
       expected_messages = [
@@ -396,8 +398,8 @@ defmodule BuildPipeline.TerminalMessagesTest do
   end
 
   describe "failed_output/1" do
-    test "with verbose true" do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(true)
+    test "with mode = verbose" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:verbose)
 
       runner = %{
         command: "echo hi",
@@ -409,8 +411,8 @@ defmodule BuildPipeline.TerminalMessagesTest do
       assert TerminalMessages.failed_output(server_state, runner) == []
     end
 
-    test "with verbose false" do
-      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_verbose(false)
+    test "with mode = normal" do
+      server_state = ServerStateBuilder.build() |> ServerStateBuilder.with_mode(:normal)
 
       runner = %{
         command: "echo hi",

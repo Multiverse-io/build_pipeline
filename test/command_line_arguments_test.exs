@@ -8,7 +8,7 @@ defmodule BuildPipeline.CommandLineArgumentsTest do
 
   describe "parse/1" do
     test "with no args returns the default setup" do
-      assert {:ok, %{cwd: ".", verbose: false}} ==
+      assert {:ok, %{cwd: ".", mode: :normal}} ==
                CommandLineArguments.parse([])
     end
 
@@ -22,8 +22,8 @@ defmodule BuildPipeline.CommandLineArgumentsTest do
                CommandLineArguments.parse(["total", "nonsense"])
     end
 
-    test "with --verbose set, sets it" do
-      assert {:ok, %{verbose: true}} = CommandLineArguments.parse(["--verbose"])
+    test "with --verbose set, sets mode to verbose" do
+      assert {:ok, %{mode: :verbose}} = CommandLineArguments.parse(["--verbose"])
     end
   end
 end

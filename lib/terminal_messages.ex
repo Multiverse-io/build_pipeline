@@ -18,7 +18,7 @@ defmodule BuildPipeline.TerminalMessages do
     end)
   end
 
-  def running(%{verbose: false, runners: runners}, runner_pid) do
+  def running(%{mode: :normal, runners: runners}, runner_pid) do
     %{command: command} = Map.fetch!(runners, runner_pid)
 
     %{
@@ -30,7 +30,7 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def running(%{verbose: true, runners: runners}, runner_pid) do
+  def running(%{mode: :verbose, runners: runners}, runner_pid) do
     %{command: command} = Map.fetch!(runners, runner_pid)
 
     %{
@@ -39,7 +39,7 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def succeeded(%{verbose: false}, runner, runner_pid) do
+  def succeeded(%{mode: :normal}, runner, runner_pid) do
     %{command: command, duration_in_microseconds: duration_in_microseconds} = runner
 
     %{
@@ -51,7 +51,7 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def succeeded(%{verbose: true}, runner, _runner_pid) do
+  def succeeded(%{mode: :verbose}, runner, _runner_pid) do
     %{command: command, duration_in_microseconds: duration_in_microseconds, output: output} =
       runner
 
@@ -66,7 +66,7 @@ defmodule BuildPipeline.TerminalMessages do
     %{line_update: false, message: message}
   end
 
-  def failed(%{verbose: true} = _server_state, runner, _runner_pid) do
+  def failed(%{mode: :verbose} = _server_state, runner, _runner_pid) do
     %{command: command, duration_in_microseconds: duration_in_microseconds, output: output} =
       runner
 
@@ -81,7 +81,7 @@ defmodule BuildPipeline.TerminalMessages do
     %{line_update: false, message: message}
   end
 
-  def failed(%{verbose: false} = _server_state, runner, runner_pid) do
+  def failed(%{mode: :normal} = _server_state, runner, runner_pid) do
     %{command: command, duration_in_microseconds: duration_in_microseconds} = runner
 
     %{
@@ -93,11 +93,11 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def abort(%{verbose: verbose, runners: runners} = _server_state) do
+  def abort(%{mode: mode, runners: runners} = _server_state) do
     runners
     |> Enum.reject(fn {_runner_pid, %{status: status}} -> status == :complete end)
     |> Enum.map(fn {runner_pid, %{command: command}} ->
-      if verbose do
+      if mode == :verbose do
         %{
           message: "#{ANSI.magenta()}#{ANSI.crossed_out()}#{command} [Aborted]",
           line_update: false
@@ -114,11 +114,11 @@ defmodule BuildPipeline.TerminalMessages do
     end)
   end
 
-  def failed_output(%{verbose: true}, _runner) do
+  def failed_output(%{mode: :verbose}, _runner) do
     []
   end
 
-  def failed_output(%{verbose: false}, %{output: output}) do
+  def failed_output(%{mode: :normal}, %{output: output}) do
     %{
       message: output,
       line_update: false
