@@ -87,7 +87,6 @@ defmodule BuildPipeline.TerminalMessages do
     message = """
     #{ANSI.red()}---------------------------------------------------------------------
     #{command} [Failed in #{duration_message(duration_in_microseconds)}] ✘
-
     #{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}
     """
 

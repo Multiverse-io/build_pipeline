@@ -10,7 +10,7 @@ defmodule BuildPipeline.CommandLineArguments do
   note: only --debug or --verbose can be set. It's one or the other
   """
 
-  # TODO update the readme about debug mode
+  # TOPO update the readme about debug mode
 
   def parse(command_line_args) do
     if @debug in command_line_args and @verbose in command_line_args do

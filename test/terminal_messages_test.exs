@@ -285,7 +285,7 @@ defmodule BuildPipeline.TerminalMessagesTest do
 
       assert TerminalMessages.failed(server_state, runner, "fake_pid") == %{
                message:
-                 "\e[31m---------------------------------------------------------------------\necho hi [Failed in 123 μs] ✘\n\n\e[31m---------------------------------------------------------------------\e[0m\n",
+                 "\e[31m---------------------------------------------------------------------\necho hi [Failed in 123 μs] ✘\n\e[31m---------------------------------------------------------------------\e[0m\n",
                line_update: false
              }
     end

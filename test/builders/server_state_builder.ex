@@ -16,10 +16,6 @@ defmodule BuildPipeline.Builders.ServerStateBuilder do
     update_in(server_state, [:mode], fn _ -> mode end)
   end
 
-  # def with_verbose(server_state, verbose) do
-  # update_in(server_state, [:verbose], fn _ -> verbose end)
-  # end
-
   def with_runners(server_state, runners) do
     update_in(server_state, [:runners], fn _ -> runners end)
   end

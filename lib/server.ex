@@ -1,6 +1,6 @@
 defmodule BuildPipeline.Server do
   use GenServer
-  alias BuildPipeline.{BuildStepRunner, TerminalPrinter, TerminalMessages}
+  alias BuildPipeline.{BuildStepRunner, TerminalPrinter, TerminalMessages, WhichBuildStepsCanRun}
 
   @moduledoc false
   @default_genserver_options []
@@ -136,22 +136,13 @@ defmodule BuildPipeline.Server do
   end
 
   defp start_runners_if_able(state) do
-    completed_runners = completed_runners_by_name(state.runners)
+    runner_pids = WhichBuildStepsCanRun.determine(state)
 
-    Enum.each(state.runners, fn {runner_pid, _build_step} ->
-      GenServer.cast(runner_pid, {:run_if_able, completed_runners})
+    Enum.each(runner_pids, fn {runner_pid, opts} ->
+      GenServer.cast(runner_pid, {:run_if_waiting, opts})
     end)
 
     state
-  end
-
-  defp completed_runners_by_name(runners) do
-    runners
-    |> Enum.filter(fn
-      {_runner_pid, %{status: :complete}} -> true
-      _ -> false
-    end)
-    |> MapSet.new(fn {_runner_pid, %{build_step_name: build_step_name}} -> build_step_name end)
   end
 
   defp init_waiting_runners(build_pipeline, cwd) do
