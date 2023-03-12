@@ -19,7 +19,7 @@ This package can be installed by adding `build_pipeline` to your list of depende
 ```elixir
 def deps do
   [
-    {:build_pipeline, "~> 0.2.0"}
+    {:build_pipeline, "~> 0.3.0"}
   ]
 end
 ```
