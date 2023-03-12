@@ -24,7 +24,6 @@ def deps do
 end
 ```
 
-Add build_pipeline as a dependency to your project<br>
 Then, From the root of your projects' directory (where your `mix.exs` file is) run:
 ```
 mix build_pipeline.init

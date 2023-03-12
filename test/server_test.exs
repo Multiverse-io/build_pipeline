@@ -258,32 +258,18 @@ defmodule BuildPipeline.ServerTest do
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
 
-    test "with mode = debug, the server can complete a simple single-step build pipeline" do
+    test "with mode = debug, the server can complete a successful multi-step build pipeline" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
 
-      build_step = %{
-        build_step_name: "echoStuff",
-        command: "echo stuff",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 0
-      }
-
-      server_setup =
-        ServerSetupBuilder.build()
-        |> ServerSetupBuilder.with_build_pipeline([build_step])
-        |> ServerSetupBuilder.with_mode(:debug)
-
       output =
         capture_io(fn ->
-          assert {:ok, _server_pid} = Server.start_link({server_setup, self()})
+          assert {:ok, _server_pid} = Server.start_link({working_setup(), self()})
           assert_receive {:server_done, _}, 1_000
         end)
 
-      assert output =~ "stuff"
+      assert output =~ "tires"
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
   end

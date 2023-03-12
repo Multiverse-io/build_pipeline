@@ -13,7 +13,6 @@ defmodule BuildPipeline.BuildStepRunner do
      %{build_step: build_step, status: :waiting, server_pid: server_pid, opts: opts, cwd: cwd}}
   end
 
-  # TODO write a test
   @impl true
   def handle_cast(:run_if_waiting, state) do
     if state.status == :waiting do
@@ -25,10 +24,6 @@ defmodule BuildPipeline.BuildStepRunner do
 
   def handle_cast(:run, state) do
     handle_continue(:run, state)
-  end
-
-  def handle_cast({:update_status, status}, state) do
-    {:noreply, %{state | status: status}}
   end
 
   @impl true
@@ -56,7 +51,6 @@ defmodule BuildPipeline.BuildStepRunner do
     GenServer.cast(state.server_pid, {:runner_finished, self(), state.result})
   end
 
-  # TODO test write_as_you_go being passed in
   defp run_shell_command(command, command_env_vars, state) do
     print_cmd_output = Keyword.get(state.opts, :print_cmd_output, false)
 

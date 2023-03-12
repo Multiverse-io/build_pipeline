@@ -1,5 +1,4 @@
 defmodule BuildPipeline.WhichBuildStepsCanRun do
-  # TODO rename module to reflect that it also returns the runner options
   def determine(%{runners: runners, mode: mode}) do
     runners
     |> concurrently_runable()
