@@ -26,4 +26,4 @@ build_pipeline-*.tar
 /tmp/
 
 /test_output/
-*/build_pipeline/previous_run_result.json
+build_pipeline/previous_run_result.json

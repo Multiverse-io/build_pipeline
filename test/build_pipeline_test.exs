@@ -186,27 +186,27 @@ defmodule BuildPipelineTest do
       assert previous_run_result == [
                %{
                  "buildStepName" => "tiresNotSlashed",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "enoughFuel",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "carWorks",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "driveToOffice",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "approachHuman",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "sayHello",
-                 "result" => "success"
+                 "result" => "successful"
                }
              ]
     end
@@ -230,27 +230,27 @@ defmodule BuildPipelineTest do
       assert previous_run_result == [
                %{
                  "buildStepName" => "tiresNotSlashed",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "enoughFuel",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "carWorks",
-                 "result" => "success"
+                 "result" => "successful"
                },
                %{
                  "buildStepName" => "driveToOffice",
-                 "result" => "success"
+                 "result" => "failed"
                },
                %{
                  "buildStepName" => "approachHuman",
-                 "result" => "success"
+                 "result" => "not started"
                },
                %{
                  "buildStepName" => "sayHello",
-                 "result" => "success"
+                 "result" => "not started"
                }
              ]
     end

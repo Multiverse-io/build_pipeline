@@ -2,7 +2,7 @@ defmodule BuildPipeline.Builders.ServerStateBuilder do
   alias BuildPipeline.Builders.RunnersBuilder
 
   def build do
-    runners = RunnersBuilder.build()
+    runners = RunnersBuilder.build_many()
 
     %{
       runners: runners,
@@ -23,5 +23,9 @@ defmodule BuildPipeline.Builders.ServerStateBuilder do
 
   def with_terminal_width(server_state, terminal_width) do
     update_in(server_state, [:terminal_width], fn _ -> terminal_width end)
+  end
+
+  def with_cwd(server_state, cwd) do
+    update_in(server_state, [:cwd], fn _ -> cwd end)
   end
 end
