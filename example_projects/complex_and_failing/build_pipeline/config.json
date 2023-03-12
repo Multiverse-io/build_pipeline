@@ -1,0 +1,53 @@
+[
+  {
+    "buildStepName": "tiresNotSlashed",
+    "commandType": "shellCommand",
+    "command": "echo tires",
+    "dependsOn": [],
+    "envVars": [
+      {
+        "name": "MIX_ENV",
+        "value": "test"
+      }
+    ]
+  },
+  {
+    "buildStepName": "enoughFuel",
+    "commandType": "shellCommand",
+    "command": "echo fuel",
+    "dependsOn": []
+  },
+  {
+    "buildStepName": "carWorks",
+    "commandType": "shellCommand",
+    "command": "echo car works",
+    "dependsOn": [
+      "tiresNotSlashed",
+      "enoughFuel"
+    ]
+  },
+  {
+    "buildStepName": "driveToOffice",
+    "commandType": "shellCommand",
+    "command": "not a real command which will crash",
+    "dependsOn": [
+      "carWorks"
+    ]
+  },
+  {
+    "buildStepName": "approachHuman",
+    "commandType": "shellCommand",
+    "command": "echo walk over",
+    "dependsOn": [
+      "driveToOffice"
+    ]
+  },
+  {
+    "buildStepName": "sayHello",
+    "commandType": "shellCommand",
+    "command": "echo hello",
+    "dependsOn": [
+      "approachHuman"
+    ]
+  }
+]

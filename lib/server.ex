@@ -1,6 +1,13 @@
 defmodule BuildPipeline.Server do
   use GenServer
-  alias BuildPipeline.{BuildStepRunner, TerminalPrinter, TerminalMessages, WhichBuildStepsCanRun}
+
+  alias BuildPipeline.{
+    BuildStepRunner,
+    FinalResult,
+    TerminalPrinter,
+    TerminalMessages,
+    WhichBuildStepsCanRun
+  }
 
   @moduledoc false
   @default_genserver_options []
@@ -21,7 +28,7 @@ defmodule BuildPipeline.Server do
   def init({setup, parent_pid}) do
     %{
       build_pipeline: build_pipeline,
-      setup: %{mode: mode, cwd: _cwd, terminal_width: terminal_width}
+      setup: %{mode: mode, cwd: cwd, terminal_width: terminal_width}
     } = setup
 
     runners = init_waiting_runners(build_pipeline, setup.setup)
@@ -30,7 +37,8 @@ defmodule BuildPipeline.Server do
       runners: runners,
       parent_pid: parent_pid,
       terminal_width: terminal_width,
-      mode: mode
+      mode: mode,
+      cwd: cwd
     }
 
     state
@@ -53,7 +61,6 @@ defmodule BuildPipeline.Server do
   end
 
   def handle_cast({:runner_finished, runner_pid, result}, state) do
-    # IO.inpect result
     state
     |> update_completed_runners(runner_pid, result)
     |> continue_unless_step_failed(runner_pid)
@@ -101,16 +108,16 @@ defmodule BuildPipeline.Server do
 
   defp continue_unless_step_failed(state, runner_pid) do
     case Map.fetch!(state.runners, runner_pid) do
-      %{exit_code: 0} = result ->
+      %{exit_code: 0 = exit_code} = result ->
         state
         |> TerminalMessages.succeeded(result, runner_pid)
         |> TerminalPrinter.runner_update(state)
 
         state
         |> start_runners_if_able()
-        |> finished_if_all_runners_done()
+        |> finished_if_all_runners_done(runner_pid, exit_code)
 
-      %{exit_code: _non_zero} = result ->
+      %{exit_code: exit_code} = result ->
         state
         |> TerminalMessages.failed(result, runner_pid)
         |> TerminalPrinter.runner_update(state)
@@ -123,12 +130,14 @@ defmodule BuildPipeline.Server do
         |> TerminalMessages.failed_output(result)
         |> TerminalPrinter.runner_update(state)
 
+        FinalResult.write(state, runner_pid, exit_code)
         {:stop, :normal, state}
     end
   end
 
-  defp finished_if_all_runners_done(state) do
+  defp finished_if_all_runners_done(state, runner_pid, exit_code) do
     if Enum.all?(state.runners, fn {_runner_pid, %{status: status}} -> status == :complete end) do
+      FinalResult.write(state, runner_pid, exit_code)
       {:stop, :normal, state}
     else
       {:noreply, state}

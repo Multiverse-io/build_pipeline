@@ -8,7 +8,8 @@ defmodule BuildPipeline.Builders.ServerStateBuilder do
       runners: runners,
       parent_pid: self(),
       terminal_width: 200,
-      mode: :normal
+      mode: :normal,
+      cwd: "."
     }
   end
 

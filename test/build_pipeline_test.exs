@@ -167,7 +167,7 @@ defmodule BuildPipelineTest do
                "I tried to run 'tput cols' but it returned a result I couldn't parse! Damn\n"
     end
 
-    test "writes the result of each step to file" do
+    test "when all build steps succeed - writes the result of each step to file" do
       previous_run_result_file =
         "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
 
@@ -186,60 +186,71 @@ defmodule BuildPipelineTest do
       assert previous_run_result == [
                %{
                  "buildStepName" => "tiresNotSlashed",
-                 "commandType" => "shellCommand",
-                 "command" => "echo tires",
-                 "dependsOn" => [],
-                 "envVars" => [
-                   %{
-                     "name" => "MIX_ENV",
-                     "value" => "test"
-                   }
-                 ],
-                 "exit_code" => "0"
+                 "result" => "success"
                },
                %{
                  "buildStepName" => "enoughFuel",
-                 "commandType" => "shellCommand",
-                 "command" => "echo fuel",
-                 "dependsOn" => [],
-                 "exit_code" => "0"
+                 "result" => "success"
                },
                %{
                  "buildStepName" => "carWorks",
-                 "commandType" => "shellCommand",
-                 "command" => "echo car works",
-                 "dependsOn" => [
-                   "tiresNotSlashed",
-                   "enoughFuel"
-                 ],
-                 "exit_code" => "0"
+                 "result" => "success"
                },
                %{
                  "buildStepName" => "driveToOffice",
-                 "commandType" => "shellCommand",
-                 "command" => "echo drive",
-                 "dependsOn" => [
-                   "carWorks"
-                 ],
-                 "exit_code" => "0"
+                 "result" => "success"
                },
                %{
                  "buildStepName" => "approachHuman",
-                 "commandType" => "shellCommand",
-                 "command" => "echo walk over",
-                 "dependsOn" => [
-                   "driveToOffice"
-                 ],
-                 "exit_code" => "0"
+                 "result" => "success"
                },
                %{
                  "buildStepName" => "sayHello",
-                 "commandType" => "shellCommand",
-                 "command" => "echo hello",
-                 "dependsOn" => [
-                   "approachHuman"
-                 ],
-                 "exit_code" => "0"
+                 "result" => "success"
+               }
+             ]
+    end
+
+    test "when a build step fails - writes the result of each step to file" do
+      previous_run_result_file =
+        "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
+
+      File.rm(previous_run_result_file)
+
+      BuildPipeline.main([
+        "--cwd",
+        "./example_projects/complex_and_failing"
+      ])
+
+      previous_run_result =
+        previous_run_result_file
+        |> File.read!()
+        |> Jason.decode!()
+
+      assert previous_run_result == [
+               %{
+                 "buildStepName" => "tiresNotSlashed",
+                 "result" => "success"
+               },
+               %{
+                 "buildStepName" => "enoughFuel",
+                 "result" => "success"
+               },
+               %{
+                 "buildStepName" => "carWorks",
+                 "result" => "success"
+               },
+               %{
+                 "buildStepName" => "driveToOffice",
+                 "result" => "success"
+               },
+               %{
+                 "buildStepName" => "approachHuman",
+                 "result" => "success"
+               },
+               %{
+                 "buildStepName" => "sayHello",
+                 "result" => "success"
                }
              ]
     end
