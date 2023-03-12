@@ -166,5 +166,82 @@ defmodule BuildPipelineTest do
       assert output ==
                "I tried to run 'tput cols' but it returned a result I couldn't parse! Damn\n"
     end
+
+    test "writes the result of each step to file" do
+      previous_run_result_file =
+        "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
+
+      File.rm(previous_run_result_file)
+
+      BuildPipeline.main([
+        "--cwd",
+        "./example_projects/complex_yet_functioning"
+      ])
+
+      previous_run_result =
+        previous_run_result_file
+        |> File.read!()
+        |> Jason.decode!()
+
+      assert previous_run_result == [
+               %{
+                 "buildStepName" => "tiresNotSlashed",
+                 "commandType" => "shellCommand",
+                 "command" => "echo tires",
+                 "dependsOn" => [],
+                 "envVars" => [
+                   %{
+                     "name" => "MIX_ENV",
+                     "value" => "test"
+                   }
+                 ],
+                 "exit_code" => "0"
+               },
+               %{
+                 "buildStepName" => "enoughFuel",
+                 "commandType" => "shellCommand",
+                 "command" => "echo fuel",
+                 "dependsOn" => [],
+                 "exit_code" => "0"
+               },
+               %{
+                 "buildStepName" => "carWorks",
+                 "commandType" => "shellCommand",
+                 "command" => "echo car works",
+                 "dependsOn" => [
+                   "tiresNotSlashed",
+                   "enoughFuel"
+                 ],
+                 "exit_code" => "0"
+               },
+               %{
+                 "buildStepName" => "driveToOffice",
+                 "commandType" => "shellCommand",
+                 "command" => "echo drive",
+                 "dependsOn" => [
+                   "carWorks"
+                 ],
+                 "exit_code" => "0"
+               },
+               %{
+                 "buildStepName" => "approachHuman",
+                 "commandType" => "shellCommand",
+                 "command" => "echo walk over",
+                 "dependsOn" => [
+                   "driveToOffice"
+                 ],
+                 "exit_code" => "0"
+               },
+               %{
+                 "buildStepName" => "sayHello",
+                 "commandType" => "shellCommand",
+                 "command" => "echo hello",
+                 "dependsOn" => [
+                   "approachHuman"
+                 ],
+                 "exit_code" => "0"
+               }
+             ]
+    end
   end
 end
