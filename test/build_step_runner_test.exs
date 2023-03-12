@@ -27,37 +27,6 @@ defmodule BuildPipeline.BuildStepRunnerTest do
     end
   end
 
-  describe "handle_cast/2 - run_if_able" do
-    test "runs if it depends_on nothing" do
-      assert_step_ran_to_completion([], [], true)
-    end
-
-    test "runs if it depends_on one thing that's done" do
-      assert_step_ran_to_completion(["dependentStep"], ["dependentStep"], true)
-      assert_step_ran_to_completion(["dependentStep"], ["dependentStep", "otherStep"], true)
-    end
-
-    test "does not run if it depends_on one thing that is not done" do
-      assert_step_ran_to_completion(["dependentStep"], ["OtherStep"], false)
-      assert_step_ran_to_completion(["dependentStep"], [], false)
-    end
-
-    test "can run scripts" do
-      build_step =
-        BuildStepBuilder.build()
-        |> BuildStepBuilder.with_script("echo_hello")
-
-      cwd = "./example_projects/runs_a_script"
-
-      {:ok, pid} = BuildStepRunner.start_link(build_step, self(), cwd)
-
-      GenServer.cast(pid, {:run_if_able, MapSet.new()})
-
-      assert_receive {:"$gen_cast", {:runner_finished, ^pid, %{exit_code: 0, output: output}}}
-      assert output == "hello\n"
-    end
-  end
-
   describe "handle_cast/2 - run" do
     test "can run shell commands" do
       build_step =
@@ -69,23 +38,6 @@ defmodule BuildPipeline.BuildStepRunnerTest do
       GenServer.cast(pid, :run)
 
       assert_receive {:"$gen_cast", {:runner_finished, ^pid, %{exit_code: 0, output: ""}}}
-    end
-  end
-
-  defp assert_step_ran_to_completion(depends_on, completed_steps, ran?) do
-    build_step =
-      BuildStepBuilder.build()
-      |> BuildStepBuilder.with_shell_command("true")
-      |> BuildStepBuilder.with_depends_on(MapSet.new(depends_on))
-
-    {:ok, pid} = BuildStepRunner.start_link(build_step, self(), @cwd)
-
-    GenServer.cast(pid, {:run_if_able, MapSet.new(completed_steps)})
-
-    if ran? do
-      assert_receive {:"$gen_cast", {:runner_finished, ^pid, %{exit_code: 0, output: ""}}}
-    else
-      refute_receive {:"$gen_cast", {:runner_finished, ^pid, %{exit_code: 0, output: ""}}}
     end
   end
 end

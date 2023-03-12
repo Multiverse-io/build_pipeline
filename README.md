@@ -1,6 +1,6 @@
 # Build Pipeline
 
-A development tool for running commands with maximum possible concurrency,
+An elixir development tool for running commands with maximum possible concurrency,
 designed to speed up CI / CD build piplines by running mulitple independent build steps at once.
 
 Commands will _only_ be executed if the commands that it `dependsOn` have run successfully first.
@@ -11,6 +11,18 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 
 ### Dependencies
 - `tput` must be runnable on your system. This is used to work out the width of your terminal to enable fancy command line output
+
+### Installation
+
+This package can be installed by adding `build_pipeline` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:build_pipeline, "~> 0.2.0"}
+  ]
+end
+```
 
 Add build_pipeline as a dependency to your project<br>
 Then, From the root of your projects' directory (where your `mix.exs` file is) run:
@@ -96,7 +108,8 @@ Build steps are defined as in the example below.
 
 
 ```
-Note that in the above example, I added a bash script to `scripts` which returns a non-zero exit code if "TODO" is found anywhere in my code (except for in the README of course :) because that wouldn't work).
+The above example is what is used to build build_pipeline itself.
+Note that there is a bash script in the  `scripts` folder which returns a non-zero exit code if "TODO" is found anywhere in the codebase (except for in the README of course :) because that wouldn't work).
 
 Also note:
 If A depends on B which depends on C, then you only need to define A with the `dependsOn` of [B], and B with the `dependsOn` of [C].
@@ -113,23 +126,8 @@ And you're away!
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
 ## mix build_pipeline.run - Options
-- `--verbose` (Optional) - Show the output of successful commands. Defaults to `false`
-
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `build_pipeline` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:build_pipeline, "~> 0.2.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/build_pipeline](https://hexdocs.pm/build_pipeline).
+- `--cwd [path/to/a/place]` (Optional) - the path in which to search for the build_pipeline directory. Defaults to "."
+- `--verbose` (Optional) - Show the output of successful as well as unsuccessul commands
+- `--debug` (Optional) - Removes build step concurrency: run commands one at a time & shows command output in realtime. Useful for er.. debugging & checking if any commands are sneakily asking for CLI input.
+Only --verbose or --debug can be set
 

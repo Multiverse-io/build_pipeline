@@ -13,24 +13,11 @@ defmodule BuildPipeline.BuildStepRunner do
      %{build_step: build_step, status: :waiting, server_pid: server_pid, opts: opts, cwd: cwd}}
   end
 
-  # TODO delete this
-  @impl true
-  def handle_cast({:run_if_able, completed_runners}, state) do
-    %{build_step: %{depends_on: depends_on}, status: status} = state
-
-    if status == :waiting && MapSet.subset?(depends_on, completed_runners) do
-      {:noreply, %{state | status: :running}, {:continue, :run}}
-    else
-      {:noreply, state}
-    end
-  end
-
   # TODO write a test
-  # TODO don't update opts here, set them on initialisation only
-  def handle_cast({:run_if_waiting, new_opts}, state) do
+  @impl true
+  def handle_cast(:run_if_waiting, state) do
     if state.status == :waiting do
-      opts = Keyword.merge(state.opts, new_opts)
-      {:noreply, %{state | status: :running, opts: opts}, {:continue, :run}}
+      {:noreply, %{state | status: :running}, {:continue, :run}}
     else
       {:noreply, state}
     end

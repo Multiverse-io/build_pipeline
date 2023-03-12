@@ -35,8 +35,8 @@ defmodule BuildPipeline.WhichBuildStepsCanRunTest do
           |> ServerStateBuilder.with_runners(runners)
 
         assert WhichBuildStepsCanRun.determine(server_state) == [
-                 {"fake_pid_1", []},
-                 {"fake_pid_2", []}
+                 "fake_pid_1",
+                 "fake_pid_2"
                ]
       end
     end
@@ -115,9 +115,9 @@ defmodule BuildPipeline.WhichBuildStepsCanRunTest do
           |> ServerStateBuilder.with_runners(runners)
 
         assert WhichBuildStepsCanRun.determine(server_state) == [
-                 {"fake_pid_A", []},
-                 {"fake_pid_B", []},
-                 {"fake_pid_E", []}
+                 "fake_pid_A",
+                 "fake_pid_B",
+                 "fake_pid_E"
                ]
       end
     end
@@ -191,9 +191,9 @@ defmodule BuildPipeline.WhichBuildStepsCanRunTest do
         |> ServerStateBuilder.with_runners(runners)
 
       assert WhichBuildStepsCanRun.determine(server_state) == [
-               {"fake_pid_C", []},
-               {"fake_pid_D", []},
-               {"fake_pid_E", []}
+               "fake_pid_C",
+               "fake_pid_D",
+               "fake_pid_E"
              ]
     end
   end
@@ -269,7 +269,7 @@ defmodule BuildPipeline.WhichBuildStepsCanRunTest do
         |> ServerStateBuilder.with_runners(runners)
 
       assert WhichBuildStepsCanRun.determine(server_state) == [
-               {"fake_pid_F", [print_cmd_output: true]}
+               "fake_pid_F"
              ]
     end
 
@@ -344,7 +344,7 @@ defmodule BuildPipeline.WhichBuildStepsCanRunTest do
         |> ServerStateBuilder.with_runners(runners)
 
       assert WhichBuildStepsCanRun.determine(server_state) == [
-               {"fake_pid_A", [print_cmd_output: true]}
+               "fake_pid_A"
              ]
     end
 
@@ -418,7 +418,7 @@ defmodule BuildPipeline.WhichBuildStepsCanRunTest do
         |> ServerStateBuilder.with_runners(runners)
 
       assert WhichBuildStepsCanRun.determine(server_state) == [
-               {"fake_pid_C", [print_cmd_output: true]}
+               "fake_pid_C"
              ]
     end
   end

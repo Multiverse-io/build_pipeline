@@ -126,7 +126,8 @@ defmodule BuildPipeline.TerminalMessagesTest do
       %{command: command} = runners[runner_pid]
 
       assert TerminalMessages.running(server_state, runner_pid) == %{
-               message: "#{ANSI.magenta()}#{command} [Running]",
+               message:
+                 "\e[35m---------------------------------------------------------------------\n#{command} [Running]\n---------------------------------------------------------------------\e[0m\n",
                line_update: false
              }
     end

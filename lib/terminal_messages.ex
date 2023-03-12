@@ -30,13 +30,25 @@ defmodule BuildPipeline.TerminalMessages do
     }
   end
 
-  def running(%{mode: mode, runners: runners}, runner_pid) when mode in [:debug, :verbose] do
+  def running(%{mode: :verbose, runners: runners}, runner_pid) do
     %{command: command} = Map.fetch!(runners, runner_pid)
 
     %{
       message: "#{ANSI.magenta()}#{command} [Running]",
       line_update: false
     }
+  end
+
+  def running(%{mode: :debug, runners: runners}, runner_pid) do
+    %{command: command} = Map.fetch!(runners, runner_pid)
+
+    message = """
+    #{ANSI.magenta()}---------------------------------------------------------------------
+    #{command} [Running]
+    ---------------------------------------------------------------------#{ANSI.reset()}
+    """
+
+    %{message: message, line_update: false}
   end
 
   def succeeded(%{mode: :normal}, runner, runner_pid) do

@@ -21,10 +21,10 @@ defmodule BuildPipeline.Server do
   def init({setup, parent_pid}) do
     %{
       build_pipeline: build_pipeline,
-      setup: %{mode: mode, cwd: cwd, terminal_width: terminal_width}
+      setup: %{mode: mode, cwd: _cwd, terminal_width: terminal_width}
     } = setup
 
-    runners = init_waiting_runners(build_pipeline, cwd)
+    runners = init_waiting_runners(build_pipeline, setup.setup)
 
     state = %{
       runners: runners,
@@ -138,16 +138,19 @@ defmodule BuildPipeline.Server do
   defp start_runners_if_able(state) do
     runner_pids = WhichBuildStepsCanRun.determine(state)
 
-    Enum.each(runner_pids, fn {runner_pid, opts} ->
-      GenServer.cast(runner_pid, {:run_if_waiting, opts})
+    Enum.each(runner_pids, fn runner_pid ->
+      GenServer.cast(runner_pid, :run_if_waiting)
     end)
 
     state
   end
 
-  defp init_waiting_runners(build_pipeline, cwd) do
+  defp init_waiting_runners(build_pipeline, setup) do
+    %{cwd: cwd, mode: mode} = setup
+
     Enum.reduce(build_pipeline, %{}, fn build_step, runners ->
-      {:ok, runner_pid} = BuildStepRunner.start_link(build_step, self(), cwd)
+      {:ok, runner_pid} =
+        BuildStepRunner.start_link(build_step, self(), cwd, print_cmd_output: mode == :debug)
 
       build_step =
         build_step

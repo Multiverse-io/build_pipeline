@@ -4,7 +4,7 @@ defmodule BuildPipeline.WhichBuildStepsCanRun do
     runners
     |> concurrently_runable()
     |> modal_filter(mode)
-    |> Enum.map(fn {pid, _} -> {pid, modal_runner_opts(mode)} end)
+    |> Enum.map(fn {pid, _} -> pid end)
   end
 
   defp modal_filter(runners, :verbose) do
@@ -23,10 +23,6 @@ defmodule BuildPipeline.WhichBuildStepsCanRun do
       _ -> []
     end
   end
-
-  defp modal_runner_opts(:normal), do: []
-  defp modal_runner_opts(:verbose), do: []
-  defp modal_runner_opts(:debug), do: [print_cmd_output: true]
 
   defp runner_order({_pid, %{order: order}}), do: order
 
