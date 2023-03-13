@@ -4,8 +4,15 @@ defmodule BuildPipeline.TerminalMessages do
   def pending(%{runners: runners, terminal_width: terminal_width}) do
     runners
     |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
-    |> Enum.map(fn {_pid, %{command: command}} ->
-      message = "#{command} [Pending]"
+    |> Enum.map(fn {_pid, %{command: command, skip: skip}} ->
+      {ansi_prefix, suffix} =
+        if skip do
+          {ANSI.green_background() <> ANSI.black(), "Skipped"}
+        else
+          {ANSI.light_magenta(), "Pending"}
+        end
+
+      message = "#{command} [#{suffix}]"
 
       truncated_msg =
         if String.length(message) > terminal_width do
@@ -14,7 +21,7 @@ defmodule BuildPipeline.TerminalMessages do
           message
         end
 
-      %{message: "#{ANSI.light_magenta()}#{truncated_msg}", line_update: false}
+      %{message: ansi_prefix <> truncated_msg, line_update: false}
     end)
   end
 

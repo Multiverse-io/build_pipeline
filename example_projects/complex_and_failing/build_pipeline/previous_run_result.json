@@ -1,1 +1,0 @@
-[{"buildStepName":"tiresNotSlashed","result":"successful"},{"buildStepName":"enoughFuel","result":"successful"},{"buildStepName":"carWorks","result":"successful"},{"buildStepName":"driveToOffice","result":"failed"},{"buildStepName":"approachHuman","result":"not started"},{"buildStepName":"sayHello","result":"not started"}]

@@ -1,33 +1,26 @@
 defmodule BuildPipeline.TerminalMessagesTest do
   use ExUnit.Case, async: false
   alias IO.ANSI
-  alias BuildPipeline.Builders.ServerStateBuilder
+  alias BuildPipeline.Builders.{RunnersBuilder, ServerStateBuilder}
   alias BuildPipeline.TerminalMessages
 
   describe "pending/2" do
-    test "with mode = verbose returns runners with terminal line numbers & messages" do
-      runners = %{
-        "fake_pid_2" => %{
-          build_step_name: "approachHuman",
-          command: "echo walk over",
-          command_env_vars: [],
-          command_type: :shell_command,
-          depends_on: MapSet.new([]),
-          order: 1,
-          status: :incomplete,
-          terminal_line_number: 2
-        },
-        "fake_pid_1" => %{
-          build_step_name: "sayHello",
-          command: "echo hello",
-          command_env_vars: [],
-          command_type: :shell_command,
-          depends_on: MapSet.new([]),
-          order: 0,
-          status: :incomplete,
-          terminal_line_number: 1
-        }
-      }
+    test "with mode = normal returns runners with terminal line numbers & messages" do
+      pid_1 = RunnersBuilder.pid()
+
+      runner_1 =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_command("echo walk over")
+        |> RunnersBuilder.with_order(0)
+
+      pid_2 = RunnersBuilder.pid()
+
+      runner_2 =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_command("echo hello")
+        |> RunnersBuilder.with_order(1)
+
+      runners = %{pid_1 => runner_1, pid_2 => runner_2}
 
       server_state =
         ServerStateBuilder.build()
@@ -35,36 +28,29 @@ defmodule BuildPipeline.TerminalMessagesTest do
         |> ServerStateBuilder.with_mode(:normal)
 
       expected_messages = [
-        %{message: "#{ANSI.light_magenta()}echo hello [Pending]", line_update: false},
-        %{message: "#{ANSI.light_magenta()}echo walk over [Pending]", line_update: false}
+        %{message: "#{ANSI.light_magenta()}echo walk over [Pending]", line_update: false},
+        %{message: "#{ANSI.light_magenta()}echo hello [Pending]", line_update: false}
       ]
 
       assert TerminalMessages.pending(server_state) == expected_messages
     end
 
     test "with mode = verbose and a really small terminal, we truncate the message" do
-      runners = %{
-        "fake_pid_2" => %{
-          build_step_name: "approachHuman",
-          command: "echo walk over",
-          command_env_vars: [],
-          command_type: :shell_command,
-          depends_on: MapSet.new([]),
-          order: 1,
-          status: :incomplete,
-          terminal_line_number: 2
-        },
-        "fake_pid_1" => %{
-          build_step_name: "sayHello",
-          command: "echo hello",
-          command_env_vars: [],
-          command_type: :shell_command,
-          depends_on: MapSet.new([]),
-          order: 0,
-          status: :incomplete,
-          terminal_line_number: 1
-        }
-      }
+      pid_1 = RunnersBuilder.pid()
+
+      runner_1 =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_command("echo walk over")
+        |> RunnersBuilder.with_order(1)
+
+      pid_2 = RunnersBuilder.pid()
+
+      runner_2 =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_command("echo hello")
+        |> RunnersBuilder.with_order(0)
+
+      runners = %{pid_1 => runner_1, pid_2 => runner_2}
 
       server_state =
         ServerStateBuilder.build()
@@ -75,6 +61,41 @@ defmodule BuildPipeline.TerminalMessagesTest do
       expected_messages = [
         %{message: "#{ANSI.light_magenta()}echo hello", line_update: false},
         %{message: "#{ANSI.light_magenta()}echo walk ", line_update: false}
+      ]
+
+      assert TerminalMessages.pending(server_state) == expected_messages
+    end
+
+    test "if any steps have skip = true, don't say pending, say skipped" do
+      pid_1 = RunnersBuilder.pid()
+
+      runner_1 =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_skip(false)
+        |> RunnersBuilder.with_command("echo 'hi mom'")
+        |> RunnersBuilder.with_order(1)
+
+      pid_2 = RunnersBuilder.pid()
+
+      runner_2 =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_command("echo 'walk over to mom'")
+        |> RunnersBuilder.with_order(0)
+
+      runners = %{pid_1 => runner_1, pid_2 => runner_2}
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_runners(runners)
+        |> ServerStateBuilder.with_mode(:normal)
+
+      expected_messages = [
+        %{
+          message: "#{ANSI.green_background()}#{ANSI.black()}echo 'walk over to mom' [Skipped]",
+          line_update: false
+        },
+        %{message: "#{ANSI.light_magenta()}echo 'hi mom' [Pending]", line_update: false}
       ]
 
       assert TerminalMessages.pending(server_state) == expected_messages
@@ -428,18 +449,14 @@ defmodule BuildPipeline.TerminalMessagesTest do
     end
 
     test "with mode = verbose and a terminal exactly as wide as the message, we don't truncate the message" do
-      runners = %{
-        "fake_pid_2" => %{
-          build_step_name: "approachHuman",
-          command: "1234",
-          command_env_vars: [],
-          command_type: :shell_command,
-          depends_on: MapSet.new([]),
-          order: 1,
-          status: :incomplete,
-          terminal_line_number: 2
-        }
-      }
+      pid_1 = RunnersBuilder.pid()
+
+      runner_1 =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_command("1234")
+        |> RunnersBuilder.with_order(0)
+
+      runners = %{pid_1 => runner_1}
 
       server_state =
         ServerStateBuilder.build()

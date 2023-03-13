@@ -1,6 +1,9 @@
 defmodule BuildPipeline.Builders.ServerSetupBuilder do
   def build do
-    %{build_pipeline: [], setup: %{mode: :normal, cwd: ".", terminal_width: 156}}
+    %{
+      build_pipeline: [],
+      setup: %{mode: :normal, cwd: ".", terminal_width: 156, save_result: false}
+    }
   end
 
   def with_build_pipeline(server_setup, build_pipeline) do

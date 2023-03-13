@@ -4,14 +4,15 @@ defmodule BuildPipeline.FinalResult.Builder do
   @successful Const.successful()
   @failed Const.failed()
   @not_started Const.not_started()
+  @skipped Const.skipped()
 
-  # TODO write more tests at this level
   def build(server_state, runner_pid, exit_code) do
     build_final_result(server_state.runners, runner_pid, exit_code)
   end
 
   defp build_final_result(runners, exiting_runner_pid, exiting_runner_exit_code) do
     runners
+    |> Enum.sort_by(&(&1 |> elem(1) |> Map.fetch!(:order)), &<=/2)
     |> Enum.map(fn {runner_pid, runner} ->
       %{
         "buildStepName" => runner.build_step_name,
@@ -36,7 +37,11 @@ defmodule BuildPipeline.FinalResult.Builder do
     exit_code_to_result(exit_code)
   end
 
-  defp runner_result(%{status: :incomplete}) do
+  defp runner_result(%{skip: true}) do
+    @skipped
+  end
+
+  defp runner_result(%{status: :incomplete, skip: false}) do
     @not_started
   end
 end

@@ -9,6 +9,7 @@ defmodule BuildPipeline.Builders.ServerStateBuilder do
       parent_pid: self(),
       terminal_width: 200,
       mode: :normal,
+      save_result: false,
       cwd: "."
     }
   end
@@ -27,5 +28,9 @@ defmodule BuildPipeline.Builders.ServerStateBuilder do
 
   def with_cwd(server_state, cwd) do
     update_in(server_state, [:cwd], fn _ -> cwd end)
+  end
+
+  def with_save_result(server_state, save_result) do
+    update_in(server_state, [:save_result], fn _ -> save_result end)
   end
 end

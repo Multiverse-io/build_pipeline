@@ -6,6 +6,8 @@ defmodule BuildPipelineTest do
   alias BuildPipeline.TerminalWidth.TputCols
   alias BuildPipeline.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
+  @moduletag timeout: 1_000
+
   describe "main" do
     test "can show runner output on the screen" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
@@ -167,16 +169,18 @@ defmodule BuildPipelineTest do
                "I tried to run 'tput cols' but it returned a result I couldn't parse! Damn\n"
     end
 
-    test "when all build steps succeed - writes the result of each step to file" do
+    test "when save-result (sr) is set, when all build steps succeed - writes the result of each step to file" do
       previous_run_result_file =
         "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
 
       File.rm(previous_run_result_file)
 
-      BuildPipeline.main([
-        "--cwd",
-        "./example_projects/complex_yet_functioning"
-      ])
+      :ok =
+        BuildPipeline.main([
+          "--cwd",
+          "./example_projects/complex_yet_functioning",
+          "--sr"
+        ])
 
       previous_run_result =
         previous_run_result_file
@@ -209,18 +213,37 @@ defmodule BuildPipelineTest do
                  "result" => "successful"
                }
              ]
+
+      File.rm(previous_run_result_file)
     end
 
-    test "when a build step fails - writes the result of each step to file" do
+    test "when save-result (sr) is NOT set, we don't save the result to file" do
+      previous_run_result_file =
+        "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
+
+      File.rm(previous_run_result_file)
+
+      :ok =
+        BuildPipeline.main([
+          "--cwd",
+          "./example_projects/complex_yet_functioning"
+        ])
+
+      assert File.exists?(previous_run_result_file) == false
+    end
+
+    test "when save-result (sr) is set, when a build step fails - writes the result of each step to file" do
       previous_run_result_file =
         "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
 
       File.rm(previous_run_result_file)
 
-      BuildPipeline.main([
-        "--cwd",
-        "./example_projects/complex_and_failing"
-      ])
+      :ok =
+        BuildPipeline.main([
+          "--cwd",
+          "./example_projects/complex_and_failing",
+          "--sr"
+        ])
 
       previous_run_result =
         previous_run_result_file
@@ -253,6 +276,103 @@ defmodule BuildPipelineTest do
                  "result" => "not started"
                }
              ]
+    end
+
+    test "when from failed (ff) is set, save the result to file just like with save result (sr)" do
+      previous_run_result_file =
+        "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
+
+      File.rm(previous_run_result_file)
+
+      :ok =
+        BuildPipeline.main([
+          "--cwd",
+          "./example_projects/complex_and_failing",
+          "--sr"
+        ])
+
+      :ok =
+        BuildPipeline.main([
+          "--cwd",
+          "./example_projects/complex_and_failing",
+          "--ff"
+        ])
+
+      previous_run_result =
+        previous_run_result_file
+        |> File.read!()
+        |> Jason.decode!()
+
+      assert previous_run_result == [
+               %{
+                 "buildStepName" => "tiresNotSlashed",
+                 "result" => "skipped"
+               },
+               %{
+                 "buildStepName" => "enoughFuel",
+                 "result" => "skipped"
+               },
+               %{
+                 "buildStepName" => "carWorks",
+                 "result" => "skipped"
+               },
+               %{
+                 "buildStepName" => "driveToOffice",
+                 "result" => "failed"
+               },
+               %{
+                 "buildStepName" => "approachHuman",
+                 "result" => "not started"
+               },
+               %{
+                 "buildStepName" => "sayHello",
+                 "result" => "not started"
+               }
+             ]
+
+      File.rm(previous_run_result_file)
+    end
+
+    test "when from failed (ff) is set, and a previous_run_result file exists, then previously successful build steps are skipped" do
+      previous_run_result_file =
+        "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
+
+      File.rm(previous_run_result_file)
+
+      :ok = BuildPipeline.main(["--cwd", "./example_projects/complex_and_failing", "--sr"])
+
+      :ok = BuildPipeline.main(["--cwd", "./example_projects/complex_and_failing", "--ff"])
+
+      previous_run_result = previous_run_result_file |> File.read!() |> Jason.decode!()
+
+      assert previous_run_result == [
+               %{
+                 "buildStepName" => "tiresNotSlashed",
+                 "result" => "skipped"
+               },
+               %{
+                 "buildStepName" => "enoughFuel",
+                 "result" => "skipped"
+               },
+               %{
+                 "buildStepName" => "carWorks",
+                 "result" => "skipped"
+               },
+               %{
+                 "buildStepName" => "driveToOffice",
+                 "result" => "failed"
+               },
+               %{
+                 "buildStepName" => "approachHuman",
+                 "result" => "not started"
+               },
+               %{
+                 "buildStepName" => "sayHello",
+                 "result" => "not started"
+               }
+             ]
+
+      File.rm(previous_run_result_file)
     end
   end
 end

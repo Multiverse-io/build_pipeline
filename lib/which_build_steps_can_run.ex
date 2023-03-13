@@ -3,7 +3,7 @@ defmodule BuildPipeline.WhichBuildStepsCanRun do
     runners
     |> concurrently_runable()
     |> modal_filter(mode)
-    |> Enum.map(fn {pid, _} -> pid end)
+    |> MapSet.new(fn {pid, _} -> pid end)
   end
 
   defp modal_filter(runners, :verbose) do
@@ -26,16 +26,18 @@ defmodule BuildPipeline.WhichBuildStepsCanRun do
   defp runner_order({_pid, %{order: order}}), do: order
 
   defp concurrently_runable(runners) do
-    completed_runners = completed_runners_by_name(runners)
+    completed_runners = completed_or_skipped_runners_by_name(runners)
 
-    Enum.filter(runners, fn {_, %{status: status, depends_on: depends_on}} ->
-      status == :incomplete && MapSet.subset?(depends_on, completed_runners)
+    Enum.filter(runners, fn {_, %{status: status, depends_on: depends_on, skip: skip}} ->
+      status == :incomplete && MapSet.subset?(depends_on, completed_runners) && not skip
     end)
   end
 
-  defp completed_runners_by_name(runners) do
+  defp completed_or_skipped_runners_by_name(runners) do
     runners
-    |> Enum.filter(fn {_, %{status: status}} -> status == :complete end)
+    |> Enum.filter(fn {_, %{status: status, skip: skip}} ->
+      skip == true || status == :complete
+    end)
     |> Enum.map(fn {_, %{build_step_name: build_step_name}} -> build_step_name end)
     |> MapSet.new()
   end

@@ -2,7 +2,7 @@ defmodule BuildPipeline.ServerTest do
   use ExUnit.Case, async: false
   import ExUnit.CaptureIO
   alias BuildPipeline.Server
-  alias BuildPipeline.Builders.ServerSetupBuilder
+  alias BuildPipeline.Builders.{ServerSetupBuilder, RunnersBuilder}
 
   describe "start_link/2" do
     test "runs build steps that work, then terminates gracefully sending the result" do
@@ -176,14 +176,11 @@ defmodule BuildPipeline.ServerTest do
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
 
-      build_step = %{
-        build_step_name: "echoStuff",
-        command: "echo stuff",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 0
-      }
+      build_step =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_build_step_name("echoStuff")
+        |> RunnersBuilder.with_command("echo stuff")
+        |> RunnersBuilder.with_command_type(:shell_command)
 
       server_setup =
         ServerSetupBuilder.build()
@@ -205,14 +202,11 @@ defmodule BuildPipeline.ServerTest do
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
 
-      build_step = %{
-        build_step_name: "fail",
-        command: "notARealShellCommand",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 0
-      }
+      build_step =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_build_step_name("fail")
+        |> RunnersBuilder.with_command("notARealShellCommand")
+        |> RunnersBuilder.with_command_type(:shell_command)
 
       server_setup =
         ServerSetupBuilder.build()
@@ -233,14 +227,11 @@ defmodule BuildPipeline.ServerTest do
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
 
-      build_step = %{
-        build_step_name: "fail",
-        command: "notARealShellCommand",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 0
-      }
+      build_step =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_build_step_name("fail")
+        |> RunnersBuilder.with_command("notARealShellCommand")
+        |> RunnersBuilder.with_command_type(:shell_command)
 
       server_setup =
         ServerSetupBuilder.build()
@@ -276,54 +267,36 @@ defmodule BuildPipeline.ServerTest do
 
   defp working_setup do
     build_pipeline = [
-      %{
-        build_step_name: "tiresNotSlashed",
-        command: "echo tires",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 0
-      },
-      %{
-        build_step_name: "enoughFuel",
-        command: "echo fuel",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 1
-      },
-      %{
-        build_step_name: "carWorks",
-        command: "echo car works",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["enoughFuel", "tiresNotSlashed"]),
-        order: 2
-      },
-      %{
-        build_step_name: "driveToOffice",
-        command: "echo drive",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["carWorks"]),
-        order: 3
-      },
-      %{
-        build_step_name: "approachHuman",
-        command: "echo walk over",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["driveToOffice"]),
-        order: 4
-      },
-      %{
-        build_step_name: "sayHello",
-        command: "echo hello",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["approachHuman"]),
-        order: 5
-      }
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(0)
+      |> RunnersBuilder.with_build_step_name("tiresNotSlashed")
+      |> RunnersBuilder.with_command("echo tires")
+      |> RunnersBuilder.with_depends_on(MapSet.new([])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(1)
+      |> RunnersBuilder.with_build_step_name("enoughFuel")
+      |> RunnersBuilder.with_command("echo fuel")
+      |> RunnersBuilder.with_depends_on(MapSet.new([])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(2)
+      |> RunnersBuilder.with_build_step_name("carWorks")
+      |> RunnersBuilder.with_command("echo car works")
+      |> RunnersBuilder.with_depends_on(MapSet.new(["enoughFuel", "tiresNotSlashed"])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(3)
+      |> RunnersBuilder.with_build_step_name("driveToOffice")
+      |> RunnersBuilder.with_command("echo drive")
+      |> RunnersBuilder.with_depends_on(MapSet.new(["carWorks"])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(4)
+      |> RunnersBuilder.with_build_step_name("approachHuman")
+      |> RunnersBuilder.with_command("echo walk over")
+      |> RunnersBuilder.with_depends_on(MapSet.new(["driveToOffice"])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(5)
+      |> RunnersBuilder.with_build_step_name("sayHello")
+      |> RunnersBuilder.with_command("echo hello")
+      |> RunnersBuilder.with_depends_on(MapSet.new(["approachHuman"]))
     ]
 
     ServerSetupBuilder.build()
@@ -334,54 +307,36 @@ defmodule BuildPipeline.ServerTest do
 
   defp failing_setup do
     build_pipeline = [
-      %{
-        build_step_name: "tiresNotSlashed",
-        command: "echo tires",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 0
-      },
-      %{
-        build_step_name: "enoughFuel",
-        command: "echo fuel",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(),
-        order: 1
-      },
-      %{
-        build_step_name: "carWorks",
-        command: "echo car works",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["enoughFuel", "tiresNotSlashed"]),
-        order: 2
-      },
-      %{
-        build_step_name: "driveToOffice",
-        command: ~s|notARealCommand|,
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["carWorks"]),
-        order: 3
-      },
-      %{
-        build_step_name: "approachHuman",
-        command: "echo walk over",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["driveToOffice"]),
-        order: 4
-      },
-      %{
-        build_step_name: "sayHello",
-        command: "echo hello",
-        command_env_vars: [],
-        command_type: :shell_command,
-        depends_on: MapSet.new(["approachHuman"]),
-        order: 5
-      }
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(0)
+      |> RunnersBuilder.with_build_step_name("tiresNotSlashed")
+      |> RunnersBuilder.with_command("echo tires")
+      |> RunnersBuilder.with_depends_on(MapSet.new([])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(1)
+      |> RunnersBuilder.with_build_step_name("enoughFuel")
+      |> RunnersBuilder.with_command("echo fuel")
+      |> RunnersBuilder.with_depends_on(MapSet.new([])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(2)
+      |> RunnersBuilder.with_build_step_name("carWorks")
+      |> RunnersBuilder.with_command("echo car works")
+      |> RunnersBuilder.with_depends_on(MapSet.new(["enoughFuel", "tiresNotSlashed"])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(3)
+      |> RunnersBuilder.with_build_step_name("driveToOffice")
+      |> RunnersBuilder.with_command(~s|notARealCommand|)
+      |> RunnersBuilder.with_depends_on(MapSet.new(["carWorks"])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(4)
+      |> RunnersBuilder.with_build_step_name("approachHuman")
+      |> RunnersBuilder.with_command("echo walk over")
+      |> RunnersBuilder.with_depends_on(MapSet.new(["driveToOffice"])),
+      RunnersBuilder.build_incomplete()
+      |> RunnersBuilder.with_order(5)
+      |> RunnersBuilder.with_build_step_name("sayHello")
+      |> RunnersBuilder.with_command("echo hello")
+      |> RunnersBuilder.with_depends_on(MapSet.new(["approachHuman"]))
     ]
 
     ServerSetupBuilder.build()

@@ -1,5 +1,13 @@
 defmodule BuildPipeline do
-  alias BuildPipeline.{CommandLineArguments, ConfigFile, Result, Server, TerminalWidth}
+  alias BuildPipeline.{
+    CommandLineArguments,
+    ConfigFile,
+    PreviousRunResult,
+    Result,
+    Server,
+    TerminalWidth
+  }
+
   @moduledoc false
 
   def main(command_line_args \\ []) do
@@ -18,6 +26,8 @@ defmodule BuildPipeline do
     |> Result.and_then(&ConfigFile.read/1)
     |> Result.and_then(&ConfigFile.parse_and_validate/1)
     |> Result.and_then(&TerminalWidth.append_to_setup/1)
+    |> Result.and_then(&PreviousRunResult.read/1)
+    |> Result.and_then(&PreviousRunResult.parse_and_validate/1)
   end
 
   defp run_if_preflight_checks_passed({:ok, setup}) do
@@ -26,7 +36,8 @@ defmodule BuildPipeline do
     {:ok, supervisor_pid} = Supervisor.start_link(children, strategy: :one_for_one)
 
     receive do
-      {:server_done, _result} -> Supervisor.stop(supervisor_pid)
+      {:server_done, _result} ->
+        Supervisor.stop(supervisor_pid)
     end
   end
 
@@ -57,6 +68,11 @@ defmodule BuildPipeline do
 
       {:terminal_width, :unexpected_tput_result, _} ->
         IO.puts("I tried to run 'tput cols' but it returned a result I couldn't parse! Damn")
+
+      {:previous_run_result_file_not_found, path} ->
+        IO.puts(
+          "You asked me to run only the steps that failed last time, and I tried to look in \n#{path}\nfor a file containing the results of the last run, but there was nothing there, so I'm crashing now *death noise*"
+        )
     end
 
     :error

@@ -35,7 +35,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [],
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
-                 order: 0
+                 order: 0,
+                 skip: false
                }
              ]
     end
@@ -62,7 +63,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [],
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
-                 order: 0
+                 order: 0,
+                 skip: false
                },
                %{
                  build_step_name: "enoughFuel",
@@ -70,7 +72,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [],
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
-                 order: 1
+                 order: 1,
+                 skip: false
                },
                %{
                  build_step_name: "carWorks",
@@ -78,7 +81,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [],
                  depends_on: MapSet.new(["tiresNotSlashed", "enoughFuel"]),
                  command_type: :shell_command,
-                 order: 2
+                 order: 2,
+                 skip: false
                },
                %{
                  build_step_name: "driveToOffice",
@@ -86,7 +90,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [],
                  depends_on: MapSet.new(["carWorks"]),
                  command_type: :shell_command,
-                 order: 3
+                 order: 3,
+                 skip: false
                },
                %{
                  build_step_name: "approachHuman",
@@ -94,7 +99,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [],
                  depends_on: MapSet.new(["driveToOffice"]),
                  command_type: :shell_command,
-                 order: 4
+                 order: 4,
+                 skip: false
                },
                %{
                  build_step_name: "sayHello",
@@ -102,7 +108,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [],
                  depends_on: MapSet.new(["approachHuman"]),
                  command_type: :shell_command,
-                 order: 5
+                 order: 5,
+                 skip: false
                }
              ]
     end
@@ -124,7 +131,8 @@ defmodule BuildPipeline.ConfigFileTest do
                  command_env_vars: [{'MIX_ENV', 'test'}],
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
-                 order: 0
+                 order: 0,
+                 skip: false
                }
              ]
     end

@@ -28,7 +28,7 @@ defmodule BuildPipeline.Server do
   def init({setup, parent_pid}) do
     %{
       build_pipeline: build_pipeline,
-      setup: %{mode: mode, cwd: cwd, terminal_width: terminal_width}
+      setup: %{mode: mode, cwd: cwd, terminal_width: terminal_width, save_result: save_result}
     } = setup
 
     runners = init_waiting_runners(build_pipeline, setup.setup)
@@ -38,7 +38,8 @@ defmodule BuildPipeline.Server do
       parent_pid: parent_pid,
       terminal_width: terminal_width,
       mode: mode,
-      cwd: cwd
+      cwd: cwd,
+      save_result: save_result
     }
 
     state
@@ -136,7 +137,9 @@ defmodule BuildPipeline.Server do
   end
 
   defp finished_if_all_runners_done(state, runner_pid, exit_code) do
-    if Enum.all?(state.runners, fn {_runner_pid, %{status: status}} -> status == :complete end) do
+    if Enum.all?(state.runners, fn {_runner_pid, %{status: status, skip: skip}} ->
+         skip == true || status == :complete
+       end) do
       FinalResult.write(state, runner_pid, exit_code)
       {:stop, :normal, state}
     else
