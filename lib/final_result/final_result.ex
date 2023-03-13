@@ -1,5 +1,4 @@
 defmodule BuildPipeline.FinalResult do
-  alias BuildPipeline.Const
   alias BuildPipeline.FinalResult.Builder
 
   def write(%{save_result: true} = server_state, runner_pid, exit_code) do

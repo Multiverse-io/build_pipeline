@@ -374,5 +374,8 @@ defmodule BuildPipelineTest do
 
       File.rm(previous_run_result_file)
     end
+
+    # TODO add a test for all steps being skipped!
+    # TODO add a test to stop skipped tests from being marked as aborted!
   end
 end
