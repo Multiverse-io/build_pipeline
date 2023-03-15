@@ -15,8 +15,15 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 
 ### Installation
 
+- wget https://raw.githubusercontent.com/mbernerslee/build_pipeline/escript/bp
+- chmod +x bp
 
-#### PLACEHOLDER FOR THE DOWNLOAD INSTRUCTIONS
+OR
+
+- clone this project
+- [additionally have elixir installed]
+- run ./build
+- copy ./bp to the directory of your choice
 
 Then, From the root of your projects' directory run:
 ```
