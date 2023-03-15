@@ -91,7 +91,7 @@ defmodule Mix.Tasks.BuildPipeline.Init do
   @shortdoc "Run to perform first-time setup for build_pipeline"
 
   use Mix.Task
-  alias BuildPipeline.Result
+  alias BuildPipeline.Run.Result
 
   @default_options %{cwd: "."}
 

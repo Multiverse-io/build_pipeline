@@ -32,7 +32,7 @@ defmodule BuildPipeline.MixProject do
   end
 
   defp elixirc_paths(:test) do
-    ["lib", "test/builders", "test/mocks"]
+    ["lib", "test/run/builders", "test/run/mocks"]
   end
 
   defp elixirc_paths(_) do
