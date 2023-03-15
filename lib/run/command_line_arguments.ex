@@ -6,8 +6,9 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   @debug "--debug"
   @save_result "--sr"
   @from_failed "--ff"
+  # keep usage_instructions in sync with the README.md file
   @usage_instructions """
-  usage: mix build_pipeline.run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--sr] [--ff]
+  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--sr] [--ff]
 
   --verbose  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
   --debug    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose
@@ -18,7 +19,7 @@ defmodule BuildPipeline.Run.CommandLineArguments do
 
   def parse(command_line_args) do
     if @debug in command_line_args and @verbose in command_line_args do
-      {:error, {:bad_cmd_args, Enum.join(command_line_args, " "), @usage_instructions}}
+      {:error, {:bad_cmd_args, @usage_instructions}}
     else
       parse(@default_setup, command_line_args)
     end

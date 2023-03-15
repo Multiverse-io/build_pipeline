@@ -40,7 +40,7 @@
     ]
   },
   {
-    "buildStepName": "esciptBuild",
+    "buildStepName": "escriptBuild",
     "commandType": "shellCommand",
     "command": "mix escript.build",
     "dependsOn": [
@@ -58,7 +58,7 @@
     "commandType": "script",
     "command": "end_to_end_test",
     "dependsOn": [
-      "compile"
+      "escriptBuild"
     ]
   }
 ]

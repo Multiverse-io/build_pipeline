@@ -1,6 +1,6 @@
 # Build Pipeline
 
-An elixir development tool for running commands with maximum possible concurrency,
+A development tool for running commands with maximum possible concurrency,
 designed to speed up CI / CD build piplines by running mulitple independent build steps at once.
 
 Commands will _only_ be executed if the commands that it `dependsOn` have run successfully first.
@@ -10,23 +10,17 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 ## Installation and Getting Up and Running
 
 ### Dependencies
+- `erlang` https://www.erlang.org/
 - `tput` must be runnable on your system. This is used to work out the width of your terminal to enable fancy command line output
 
 ### Installation
 
-This package can be installed by adding `build_pipeline` to your list of dependencies in `mix.exs`:
 
-```elixir
-def deps do
-  [
-    {:build_pipeline, "~> 0.3.0"}
-  ]
-end
-```
+#### PLACEHOLDER FOR THE DOWNLOAD INSTRUCTIONS
 
-Then, From the root of your projects' directory (where your `mix.exs` file is) run:
+Then, From the root of your projects' directory run:
 ```
-mix build_pipeline.init
+./bp init
 ```
 
 Run this as first-time setup -
@@ -37,7 +31,7 @@ build_pipeline
 ├── config.json
 └── scripts
 ```
-Next, edit your `config.json` file, adding the desired build steps.<br>
+Next, edit your `config.json` file, adding the desired build steps.
 `config.json` must be only a list, containing `buildSteps`.
 
 Build steps are defined as in the example below.
@@ -56,77 +50,57 @@ Build steps are defined as in the example below.
     "dependsOn": []
   },
   {
-    "buildStepName": "deps.get",
+    "buildStepName": "fetch_dependencies",
     "commandType": "shellCommand",
-    "command": "mix deps.get",
+    "command": "echo 'a real command to fetch project dependencies'",
     "dependsOn": []
   },
   {
     "buildStepName": "compile",
     "commandType": "shellCommand",
-    "command": "mix compile --force --warnings-as-errors",
-    "dependsOn": [
-      "deps.get"
-    ],
+    "command": "echo 'a real compile code command!'",
+    "dependsOn": ["fetch_dependencies"],
     "envVars": [
       {
-        "name": "MIX_ENV",
-        "value": "test"
+        "name": "COMPILE_ENV_VAR_EXAMPLE_KEY",
+        "value": "COMPILE_ENV_VAR_EXAMPLE_VALUE"
       }
     ]
-  },
-  {
-    "buildStepName": "loadconfig",
-    "commandType": "shellCommand",
-    "command": "mix loadconfig config/prod.exs",
-    "dependsOn": []
   },
   {
     "buildStepName": "test",
     "commandType": "shellCommand",
-    "command": "mix test --color",
-    "dependsOn": [
-      "compile"
-    ]
-  },
-  {
-    "buildStepName": "esciptBuild",
-    "commandType": "shellCommand",
-    "command": "mix escript.build",
-    "dependsOn": [
-      "test"
-    ],
-    "envVars": [
-      {
-        "name": "MIX_ENV",
-        "value": "prod"
-      }
-    ]
+    "command": "echo 'the tests for my project ran really fast. wow!'",
+    "dependsOn": ["compile"]
   }
 ]
 
 
 ```
-The above example is what is used to build build_pipeline itself.
-Note that there is a bash script in the  `scripts` folder which returns a non-zero exit code if "TODO" is found anywhere in the codebase (except for in the README of course :) because that wouldn't work).
+In the above example, I have a file: `build_pipline/scripts/find_todos`.
+It's a bash script which returns a non-zero exit code if "TODO" is found anywhere in the code.
 
-Also note:
-If A depends on B which depends on C, then you only need to define A with the `dependsOn` of [B], and B with the `dependsOn` of [C].
-Saying that A `dependsOn` [B, C] is redundant. Just define A with `dependsOn` = [B].
+- `find_todos` will run concurrently with `fetch_dependencies`, since they both depend on nothing
+- as soon as `fetch_dependencies` succeeds, `compile` will run
+- as soon as `compile` succeeds, `test` will run
+- if all commands exit with an exit code of 0, then this run was successful!
+
+If A `dependsOn` B which depends on C, then you only need to define A with the `dependsOn` of [B], and B with the `dependsOn` of [C].
+Saying that A `dependsOn` [B, C] is redundant. Just define A with `dependsOn` = [B]. If A fails, B will not run. If B fails, C will not run.
 
 Once your `config.json` and any supporting scripts in `scripts` are in place, you're good to go, and you can run
 
 ```
-mix build_pipeline.run
+./bp run
 ```
 
 And you're away!
 
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
-## mix build_pipeline.run - Options
-- `--cwd [path/to/a/place]` (Optional) - the path in which to search for the build_pipeline directory. Defaults to "."
-- `--verbose` (Optional) - Show the output of successful as well as unsuccessul commands
-- `--debug` (Optional) - Removes build step concurrency: run commands one at a time & shows command output in realtime. Useful for er.. debugging & checking if any commands are sneakily asking for CLI input.
-Only --verbose or --debug can be set
-
+## ./bp run - Options
+`--verbose`  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
+`--debug`    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose
+`--cwd path` - the path in which to look for the build_pipeline config.json and build scripts. Defaults to "."
+`--sr`       - save-result: saves the results of this run to "<cwd>/previous_run_result.json"
+`--ff`       - from-failed: sets save-result (--sr) and also if "<cwd>/previous_run_result.json" exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. If no previous_run_result.json file is found then I exit and tell you I couldn't do as you asked.

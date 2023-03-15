@@ -1,8 +1,7 @@
 defmodule BuildPipeline.MixProject do
   use Mix.Project
 
-  @app_name :build_pipeline
-  @escript_name :"run_#{@app_name}"
+  @escript_name :bp
 
   def project do
     [

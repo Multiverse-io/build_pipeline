@@ -3,7 +3,7 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
   alias BuildPipeline.Run.CommandLineArguments
 
   @usage_instructions """
-  usage: mix build_pipeline.run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--sr] [--ff]
+  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--sr] [--ff]
 
   --verbose  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
   --debug    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose
@@ -37,13 +37,13 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
     end
 
     test "with --debug and --verbose set, returns error & usage instructions" do
-      assert {:error, {:bad_cmd_args, "--debug --verbose", @usage_instructions}} =
+      assert {:error, {:bad_cmd_args, @usage_instructions}} =
                CommandLineArguments.parse(["--debug", "--verbose"])
 
-      assert {:error, {:bad_cmd_args, "--verbose --debug", @usage_instructions}} =
+      assert {:error, {:bad_cmd_args, @usage_instructions}} =
                CommandLineArguments.parse(["--verbose", "--debug"])
 
-      assert {:error, {:bad_cmd_args, "--verbose --debug --cwd cool/path", @usage_instructions}} =
+      assert {:error, {:bad_cmd_args, @usage_instructions}} =
                CommandLineArguments.parse(["--verbose", "--debug", "--cwd", "cool/path"])
     end
 

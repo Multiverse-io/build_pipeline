@@ -5,15 +5,10 @@ project_dir="$example_projects_dir/test_project"
 rm -rf $project_dir
 cd $example_projects_dir
 mix new test_project > /dev/null 2>&1
-cd "test_project"
-touch new_mix.exs
-sed 's/.*dep_from_hexpm.*/      {:build_pipeline, path: "..\/.."}/g' mix.exs > new_mix.exs
-rm mix.exs
-mv new_mix.exs mix.exs
-mix deps.get
-mix build_pipeline.init
+pwd
+./../bp init --cwd test_project
 init_result=$?
-mix build_pipeline.run
+./../bp run --cwd test_project
 run_result=$?
 if [ $init_result -ne 0 ]; then
   echo "FAILED - mix build_pipeline.init"

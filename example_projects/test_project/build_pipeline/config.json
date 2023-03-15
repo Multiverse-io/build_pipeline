@@ -1,30 +1,28 @@
 [
   {
-    "buildStepName": "get dependencies",
+    "buildStepName": "check tires",
     "commandType": "shellCommand",
-    "command": "mix deps.get",
+    "command": "echo tires OK!",
     "dependsOn": []
   },
   {
-    "buildStepName": "compile",
+    "buildStepName": "check enough fuel",
     "commandType": "shellCommand",
-    "command": "mix compile --force --warnings-as-errors",
-    "dependsOn": [
-      "get dependencies"
-    ],
+    "command": "echo fuel OK!",
+    "dependsOn": [],
     "envVars": [
       {
-        "name": "MIX_ENV",
-        "value": "test"
+        "name": "SOME_ENV_VAR",
+        "value": "A_COOL_ENV_VAR"
       }
     ]
   },
   {
-    "buildStepName": "test",
+    "buildStepName": "drive car",
     "commandType": "shellCommand",
-    "command": "mix test --color",
+    "command": "echo I'm driving OK!",
     "dependsOn": [
-      "compile"
+      "check tires", "check enough fuel"
     ]
   }
 ]

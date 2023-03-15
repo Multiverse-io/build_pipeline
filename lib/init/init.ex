@@ -35,11 +35,10 @@ defmodule BuildPipeline.Init do
   end
 
   defp copy_initial_config_over(options, directory) do
-    priv_dir = :code.priv_dir(:build_pipeline)
-    copy_from_path = Path.join(priv_dir, "initial_config.json")
-    paste_path = Path.join(directory, "config.json")
-    write_info("Creating #{paste_path}")
-    File.cp(copy_from_path, paste_path)
+    config_path = Path.join(directory, "config.json")
+    write_info("Creating #{config_path}")
+    File.touch!(config_path)
+    File.write!(config_path, initial_config_json())
     {:ok, {options, directory}}
   end
 
@@ -110,5 +109,38 @@ defmodule BuildPipeline.Init do
 
   defp write_error_msg(message) do
     IO.puts("#{IO.ANSI.red()}#{message}#{IO.ANSI.reset()}")
+  end
+
+  defp initial_config_json do
+    """
+    [
+      {
+        "buildStepName": "check tires",
+        "commandType": "shellCommand",
+        "command": "echo tires OK!",
+        "dependsOn": []
+      },
+      {
+        "buildStepName": "check enough fuel",
+        "commandType": "shellCommand",
+        "command": "echo fuel OK!",
+        "dependsOn": [],
+        "envVars": [
+          {
+            "name": "SOME_ENV_VAR",
+            "value": "A_COOL_ENV_VAR"
+          }
+        ]
+      },
+      {
+        "buildStepName": "drive car",
+        "commandType": "shellCommand",
+        "command": "echo I'm driving OK!",
+        "dependsOn": [
+          "check tires", "check enough fuel"
+        ]
+      }
+    ]
+    """
   end
 end

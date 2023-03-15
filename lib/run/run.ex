@@ -8,8 +8,6 @@ defmodule BuildPipeline.Run do
     TerminalWidth
   }
 
-  @moduledoc false
-
   def main(command_line_args \\ []) do
     run(command_line_args)
   end
