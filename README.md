@@ -15,7 +15,7 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 
 ### Installation
 
-- wget https://raw.githubusercontent.com/mbernerslee/build_pipeline/escript/bp
+- wget https://raw.githubusercontent.com/mbernerslee/build_pipeline/master/bp
 - chmod +x bp
 
 OR
