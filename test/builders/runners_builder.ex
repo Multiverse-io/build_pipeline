@@ -77,7 +77,7 @@ defmodule BuildPipeline.Builders.RunnersBuilder do
   end
 
   def build_incomplete do
-    build_step_name = random_pokemon()
+    build_step_name = build_step_name()
 
     %{
       build_step_name: build_step_name,
@@ -147,7 +147,7 @@ defmodule BuildPipeline.Builders.RunnersBuilder do
     Map.put(runner, :status, status)
   end
 
-  defp random_pokemon do
+  def build_step_name do
     Pokemon.name() <> to_string(positive_number())
   end
 

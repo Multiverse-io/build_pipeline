@@ -229,6 +229,13 @@ defmodule BuildPipeline.ConfigFileTest do
 
       assert [%{command: "echo_hello", command_type: :script}] = build_pipeline
     end
+
+    test "returns error given invalid json" do
+      json = "invalid nonsense"
+
+      assert {:error, {:invalid_config, %Jason.DecodeError{}}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
   end
 
   describe "no circular dependsOn references" do

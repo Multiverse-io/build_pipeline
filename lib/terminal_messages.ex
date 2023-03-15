@@ -126,7 +126,9 @@ defmodule BuildPipeline.TerminalMessages do
 
   def abort(%{mode: mode, runners: runners} = _server_state) do
     runners
-    |> Enum.reject(fn {_runner_pid, %{status: status}} -> status == :complete end)
+    |> Enum.reject(fn {_runner_pid, %{status: status, skip: skip}} ->
+      status == :complete || skip == true
+    end)
     |> Enum.map(fn {runner_pid, %{command: command}} ->
       abort_message(mode, command, runner_pid)
     end)

@@ -4,7 +4,6 @@ defmodule BuildPipeline.PreviousRunResult do
   @skipable_results Const.skipable_results()
   @unskipable_results Const.unskipable_results()
 
-  # TODO write tests for these things
   def read(%{setup: %{run_from_failed: false}} = config) do
     {:ok, config}
   end
@@ -26,12 +25,16 @@ defmodule BuildPipeline.PreviousRunResult do
     file_contents
     |> Jason.decode()
     |> Result.and_then(fn previous_run_result ->
-      update_build_pipeline(build_pipeline, previous_run_result)
+      update_build_pipeline(build_pipeline, previous_run_result, file_contents)
     end)
     |> Result.and_then(&{:ok, Map.put(config, :build_pipeline, &1)})
+    |> case do
+      {:error, %Jason.DecodeError{} = error} -> {:error, {:previous_run_result, error}}
+      other -> other
+    end
   end
 
-  defp update_build_pipeline(build_pipeline, previous_run_result) do
+  defp update_build_pipeline(build_pipeline, previous_run_result, file_contents) do
     build_pipeline = build_pipeline_to_map(build_pipeline)
 
     previous_run_result
@@ -43,7 +46,7 @@ defmodule BuildPipeline.PreviousRunResult do
             update_build_step(acc, step_name, result)
 
           _ ->
-            {:halt, {:error, {:previous_run_result, "blah"}}}
+            {:halt, {:error, {:previous_run_result, bad_valid_json_error(file_contents)}}}
         end
       end
     )
@@ -58,13 +61,46 @@ defmodule BuildPipeline.PreviousRunResult do
     put_build_step_skip(build_pipeline, step_name, false)
   end
 
-  defp update_build_step(_build_pipeline, _step_name, _result) do
-    {:halt, {:error, {:previous_run_result, "blah"}}}
+  defp update_build_step(_build_pipeline, _step_name, result) do
+    {:halt, {:error, {:previous_run_result, unknown_result_error(result)}}}
+  end
+
+  defp unknown_result_error(result) do
+    """
+    I couldn't parse the result the previous run!
+
+    I need a JSON list containing a list of only {buildStepName, result},
+    but I was given a result I didn't recognise of "#{result}"
+
+    I suggest you delete your previous_run_result.json file & run the whole build from scratch...
+    """
+  end
+
+  defp unknown_build_step_name_error(step_name) do
+    """
+    Something's wrong with my saved build_pipeline/previous_run_result.json!
+
+    It contains a buildStepName #{step_name}
+    but there isn't a build step of that name in build_pipeline/config.json!
+
+    I suggest you delete your previous_run_result.json file & run the whole build from scratch...
+    """
+  end
+
+  defp bad_valid_json_error(json) do
+    """
+    I couldn't parse the result the previous run!
+
+    I need a JSON list containing a list of only {buildStepName, result},
+    but I was given #{json}.
+
+    I suggest you delete your previous_run_result.json file & run the whole build from scratch...
+    """
   end
 
   defp put_build_step_skip(build_pipeline, step_name, skip) do
     case Map.get(build_pipeline, step_name) do
-      nil -> {:halt, {:error, {:previous_run_result, "blah"}}}
+      nil -> {:halt, {:error, {:previous_run_result, unknown_build_step_name_error(step_name)}}}
       _build_step -> {:cont, {:ok, put_in(build_pipeline, [step_name, :skip], skip)}}
     end
   end

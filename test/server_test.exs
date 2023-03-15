@@ -4,6 +4,8 @@ defmodule BuildPipeline.ServerTest do
   alias BuildPipeline.Server
   alias BuildPipeline.Builders.{ServerSetupBuilder, RunnersBuilder}
 
+  @moduletag timeout: 2_000
+
   describe "start_link/2" do
     test "runs build steps that work, then terminates gracefully sending the result" do
       assert {:ok, server_pid} = Server.start_link({working_setup(), self()})
@@ -262,6 +264,28 @@ defmodule BuildPipeline.ServerTest do
 
       assert output =~ "tires"
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
+
+    test "with from failed set, if all steps are skipped, then we exit right away" do
+      build_step =
+        RunnersBuilder.build_incomplete()
+        |> RunnersBuilder.with_build_step_name("echo")
+        |> RunnersBuilder.with_command("echo hi")
+        |> RunnersBuilder.with_command_type(:shell_command)
+        |> RunnersBuilder.with_skip(true)
+
+      server_setup =
+        ServerSetupBuilder.build()
+        |> ServerSetupBuilder.with_build_pipeline([build_step])
+
+      output =
+        capture_io(fn ->
+          assert {:ok, _server_pid} = Server.start_link({server_setup, self()})
+        end)
+
+      assert output =~ "We're done already!"
+
+      assert_receive {:server_done, %{result: :success, build_pipeline: [_]}}, 1_000
     end
   end
 

@@ -394,10 +394,10 @@ defmodule BuildPipeline.TerminalMessagesTest do
   describe "aborted/1" do
     test "incomplete runners return the abort message" do
       runners = %{
-        "fake_pid_1" => %{command: "1", status: :complete},
-        "fake_pid_2" => %{command: "2", status: :incomplete},
-        "fake_pid_3" => %{command: "3", status: :incomplete},
-        "fake_pid_4" => %{command: "4", status: :complete}
+        "fake_pid_1" => RunnersBuilder.build_complete() |> RunnersBuilder.with_command("1"),
+        "fake_pid_2" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_command("2"),
+        "fake_pid_3" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_command("3"),
+        "fake_pid_4" => RunnersBuilder.build_complete() |> RunnersBuilder.with_command("4")
       }
 
       server_state =
@@ -423,12 +423,28 @@ defmodule BuildPipeline.TerminalMessagesTest do
              ]
     end
 
+    test "skipped runners don't come up as aborted" do
+      runners = %{
+        "fake_pid_1" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_skip(true),
+        "fake_pid_2" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_skip(true),
+        "fake_pid_3" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_skip(false),
+        "fake_pid_4" => RunnersBuilder.build_complete() |> RunnersBuilder.with_skip(false)
+      }
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_mode(:normal)
+        |> ServerStateBuilder.with_runners(runners)
+
+      assert [%{runner_pid: "fake_pid_3"}] = TerminalMessages.abort(server_state)
+    end
+
     test "with mode = verbose, the message format is different with line_update false" do
       runners = %{
-        "fake_pid_1" => %{command: "1", status: :complete},
-        "fake_pid_2" => %{command: "2", status: :incomplete},
-        "fake_pid_3" => %{command: "3", status: :incomplete},
-        "fake_pid_4" => %{command: "4", status: :complete}
+        "fake_pid_1" => RunnersBuilder.build_complete() |> RunnersBuilder.with_command("1"),
+        "fake_pid_2" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_command("2"),
+        "fake_pid_3" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_command("3"),
+        "fake_pid_4" => RunnersBuilder.build_complete() |> RunnersBuilder.with_command("4")
       }
 
       server_state =
@@ -473,10 +489,10 @@ defmodule BuildPipeline.TerminalMessagesTest do
 
     test "with mode = debug, returns the same output as mode = verbose" do
       runners = %{
-        "fake_pid_1" => %{command: "1", status: :complete},
-        "fake_pid_2" => %{command: "2", status: :incomplete},
-        "fake_pid_3" => %{command: "3", status: :incomplete},
-        "fake_pid_4" => %{command: "4", status: :complete}
+        "fake_pid_1" => RunnersBuilder.build_complete() |> RunnersBuilder.with_command("1"),
+        "fake_pid_2" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_command("2"),
+        "fake_pid_3" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_command("3"),
+        "fake_pid_4" => RunnersBuilder.build_complete() |> RunnersBuilder.with_command("4")
       }
 
       verbose_server_state =

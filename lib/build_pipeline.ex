@@ -50,6 +50,9 @@ defmodule BuildPipeline do
             "#{usage_instructions}"
         )
 
+      {:invalid_config, %Jason.DecodeError{}} ->
+        IO.puts("I failed to parse the config.json because it was not valid JSON")
+
       {:invalid_config, error_message} ->
         IO.puts(error_message)
 
@@ -58,9 +61,6 @@ defmodule BuildPipeline do
           "I failed to find a config.json file in the place you told me to look '#{bad_config_file_path}'"
         )
 
-      %Jason.DecodeError{} ->
-        IO.puts("I failed to parse the config.json because it was not valid JSON")
-
       {:terminal_width, :tput_not_on_system} ->
         IO.puts(
           "I tried to run 'tput cols' but it failed because it looks like I'm not able to run the 'tput' binary?"
@@ -68,6 +68,14 @@ defmodule BuildPipeline do
 
       {:terminal_width, :unexpected_tput_result, _} ->
         IO.puts("I tried to run 'tput cols' but it returned a result I couldn't parse! Damn")
+
+      {:previous_run_result, %Jason.DecodeError{}} ->
+        IO.puts(
+          "I failed to parse the previous_run_result.json because it was not valid JSON. I suggest you delete it and run the full build from scratch"
+        )
+
+      {:previous_run_result, error} ->
+        IO.puts(error)
 
       {:previous_run_result_file_not_found, path} ->
         IO.puts(

@@ -3,7 +3,7 @@ defmodule BuildPipeline.BuildStepRunnerTest do
   alias BuildPipeline.BuildStepRunner
   alias BuildPipeline.Builders.BuildStepBuilder
 
-  @build_step BuildStepBuilder.build("noop")
+  @build_step BuildStepBuilder.build()
   @cwd "."
 
   describe "start_link/2" do

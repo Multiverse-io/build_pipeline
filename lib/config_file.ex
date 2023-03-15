@@ -21,6 +21,10 @@ defmodule BuildPipeline.ConfigFile do
     |> Jason.decode()
     |> Result.and_then(&build_build_pipeline/1)
     |> Result.and_then(&{:ok, %{build_pipeline: &1, setup: setup}})
+    |> case do
+      {:error, %Jason.DecodeError{} = error} -> {:error, {:invalid_config, error}}
+      other -> other
+    end
   end
 
   defp build_build_pipeline(json) do
@@ -44,7 +48,6 @@ defmodule BuildPipeline.ConfigFile do
   ]
 
   defp build_build_step(json, order) do
-    # TODO test this naughty skip: false thing
     initial_build_step = {:ok, %{order: order, skip: false}}
 
     @simple_steps

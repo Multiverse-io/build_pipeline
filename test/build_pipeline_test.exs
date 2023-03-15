@@ -375,7 +375,69 @@ defmodule BuildPipelineTest do
       File.rm(previous_run_result_file)
     end
 
-    # TODO add a test for all steps being skipped!
-    # TODO add a test to stop skipped tests from being marked as aborted!
+    test "when from failed (ff) is set, but the file can't be found, returns an error" do
+      previous_run_result_file =
+        "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
+
+      File.rm(previous_run_result_file)
+
+      output =
+        capture_io(fn ->
+          assert :error =
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./example_projects/complex_and_failing",
+                     "--ff"
+                   ])
+        end)
+
+      assert output =~
+               "You asked me to run only the steps that failed last time, and I tried to look in \n#{previous_run_result_file}\nfor a file containing the results of the last run, but there was nothing there, so I'm crashing now *death noise*"
+    end
+
+    test "when from failed (ff) is set, but with invalid JSON in the file, returns an error" do
+      output =
+        capture_io(fn ->
+          assert :error =
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./example_projects/invalid_previous_run_result_json",
+                     "--ff"
+                   ])
+        end)
+
+      assert output =~
+               "I failed to parse the previous_run_result.json because it was not valid JSON. I suggest you delete it and run the full build from scratch"
+    end
+
+    test "when from failed (ff) is set, but with valid JSON we can't parse, returns an error" do
+      output =
+        capture_io(fn ->
+          assert :error =
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./example_projects/valid_nonsense_previous_run_result_json",
+                     "--ff"
+                   ])
+        end)
+
+      assert output =~
+               "I couldn't parse the result the previous run!\n\nI need a JSON list containing a list of only {buildStepName, result},\nbut I was given {\"nonsense\": \"json\"}\n.\n\nI suggest you delete your previous_run_result.json file & run the whole build from scratch...\n\n"
+    end
+
+    test "when from failed (ff) is set, but with valid JSON but containing a result we can't parse, returns an error" do
+      output =
+        capture_io(fn ->
+          assert :error =
+                   BuildPipeline.main([
+                     "--cwd",
+                     "./example_projects/bad_build_step_name_previous_run_result_json",
+                     "--ff"
+                   ])
+        end)
+
+      assert output =~
+               "I couldn't parse the result the previous run!\n\nI need a JSON list containing a list of only {buildStepName, result},\nbut I was given a result I didn't recognise of \"nonsense\"\n\nI suggest you delete your previous_run_result.json file & run the whole build from scratch...\n\n"
+    end
   end
 end

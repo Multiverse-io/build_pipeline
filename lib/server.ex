@@ -51,16 +51,12 @@ defmodule BuildPipeline.Server do
 
   @impl true
   def handle_continue(:start_runners, state) do
-    start_runners_if_able(state)
-    {:noreply, state}
+    state
+    |> start_runners_if_able()
+    |> finished_if_all_runners_done()
   end
 
   @impl true
-  def handle_cast(:start_runners, state) do
-    start_runners_if_able(state)
-    {:noreply, state}
-  end
-
   def handle_cast({:runner_finished, runner_pid, result}, state) do
     state
     |> update_completed_runners(runner_pid, result)
@@ -87,7 +83,10 @@ defmodule BuildPipeline.Server do
       |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
       |> Enum.map(fn {_, build_step} -> build_step end)
 
-    failed? = Enum.any?(build_pipeline, fn build_step -> build_step.status == :incomplete end)
+    failed? =
+      Enum.any?(build_pipeline, fn build_step ->
+        build_step.status == :incomplete && build_step.skip == false
+      end)
 
     if failed? do
       %{build_pipeline: build_pipeline, result: :failure}
@@ -136,15 +135,28 @@ defmodule BuildPipeline.Server do
     end
   end
 
+  defp finished_if_all_runners_done(state) do
+    if all_runners_done?(state) do
+      IO.puts("We're done already!")
+      {:stop, :normal, state}
+    else
+      {:noreply, state}
+    end
+  end
+
   defp finished_if_all_runners_done(state, runner_pid, exit_code) do
-    if Enum.all?(state.runners, fn {_runner_pid, %{status: status, skip: skip}} ->
-         skip == true || status == :complete
-       end) do
+    if all_runners_done?(state) do
       FinalResult.write(state, runner_pid, exit_code)
       {:stop, :normal, state}
     else
       {:noreply, state}
     end
+  end
+
+  defp all_runners_done?(state) do
+    Enum.all?(state.runners, fn {_runner_pid, %{status: status, skip: skip}} ->
+      skip == true || status == :complete
+    end)
   end
 
   defp start_runners_if_able(state) do
