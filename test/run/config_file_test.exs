@@ -7,7 +7,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
   @setup %{cwd: "."}
 
   describe "read" do
-    test "returns ok with the file's contents if it's there and readabe" do
+    test "returns ok with the file's contents if it's there and readable" do
       setup = %{cwd: @simple_example_dir}
       assert {:ok, {file_contents, ^setup}} = ConfigFile.read(setup)
 

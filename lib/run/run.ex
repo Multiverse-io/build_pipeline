@@ -2,6 +2,7 @@ defmodule BuildPipeline.Run do
   alias BuildPipeline.Run.{
     CommandLineArguments,
     ConfigFile,
+    EnvVars,
     PreviousRunResult,
     Result,
     Server,
@@ -21,6 +22,7 @@ defmodule BuildPipeline.Run do
   defp preflight_checks(command_line_args) do
     command_line_args
     |> CommandLineArguments.parse()
+    |> Result.and_then(&EnvVars.put_config/1)
     |> Result.and_then(&ConfigFile.read/1)
     |> Result.and_then(&ConfigFile.parse_and_validate/1)
     |> Result.and_then(&TerminalWidth.append_to_setup/1)
@@ -79,6 +81,9 @@ defmodule BuildPipeline.Run do
         IO.puts(
           "You asked me to run only the steps that failed last time, and I tried to look in \n#{path}\nfor a file containing the results of the last run, but there was nothing there, so I'm crashing now *death noise*"
         )
+
+      other ->
+        IO.puts("I failed ot startup with an error of\n#{inspect(other)}")
     end
 
     :error
