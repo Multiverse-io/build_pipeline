@@ -20,9 +20,8 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 
 OR
 
-- clone this project
+- git clone this project
 - [additionally have elixir installed]
-- run ./build
 - copy ./bp to the directory of your choice
 
 Then, From the root of your projects' directory run:
@@ -105,11 +104,40 @@ And you're away!
 
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
+
+### Reccomendations on how to run build_pipeline on CI vs localy
+
+## On CI
+On CI it is reccommended to run either
+
+`./bp run`
+or
+`./bp run --verbose`
+
+Without `--verbose` (as mentioned earlier) _output from successful commands are silenced_. If you don't like that then...
+
+with `--verbose`, output of successful commands _are_ printed to the terminal, but be advised that output from successful commands are only printed when they are finished, not in real-time.
+
+## Locally
+Locally it is reccommended to put
+`export BUILD_PIPELINE_SAVE_RESULT=true`
+in your ~/.bashrc, ~/.zshrc, or whatever you use
+
+such that `./bp run` will always run in save-result mode (as if you're always running `./bp run --sr`)
+
+What this will do is (at the expense of a small amount of overhead to save a file of the results at the end) allow you to run
+
+`./bp run --ff`
+
+to skip the build steps that succeeded in the previous run
+in the knowledge that you'll always have a record of the previous run available, and will let you skip steps that you know you don't need to run again, since they worked the last time you ran `./bp run`
+
+
 ## ./bp run - Options
 ### Command Line Arguments
 `--verbose`  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
 
-`--debug`    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose
+`--debug`    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose. If you're scratching your head wondering what's going wrong, this flag is reccommended.
 
 `--cwd path` - the path in which to look for the build_pipeline config.json and build scripts. Defaults to "."
 
@@ -122,4 +150,8 @@ Some `./bp run` options be set by enviroment variables.
 
 In the case of an option being set by both by a command line argument and an environment variable - the command line argument takes precdent.
 
+In other words `BUILD_PIPELINE_SAVE_RESULT=false ./bp run --sr` _will_ save the result
+
 `BUILD_PIPELINE_SAVE_RESULT=true|false` - the same as setting the command line argument `--sr` (see above)
+
+`BUILD_PIPELINE_FROM_FAILED=true|false` - the same as setting the command line argument `--ff` (see above)

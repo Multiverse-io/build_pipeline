@@ -5,7 +5,6 @@ project_dir="$example_projects_dir/test_project"
 rm -rf $project_dir
 cd $example_projects_dir
 mix new test_project > /dev/null 2>&1
-pwd
 ./../bp init --cwd test_project
 init_result=$?
 ./../bp run --cwd test_project

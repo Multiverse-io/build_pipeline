@@ -3,18 +3,18 @@ defmodule BuildPipeline.RunTest do
   use Mimic
   import ExUnit.CaptureIO
   alias BuildPipeline.Run
-  alias BuildPipeline.Run.Const
+  alias BuildPipeline.Run.Support.EnvVarsSystemMock
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
   @moduletag timeout: 1_000
-  @save_result_env_var_name Const.save_result_env_var_name()
 
-  describe "main" do
+  describe "main/1" do
     test "can show runner output on the screen" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
+      EnvVarsSystemMock.setup()
 
       output =
         capture_io(fn ->
@@ -49,6 +49,7 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "with mode = debug, can show runner output on the screen & run to completion" do
+      EnvVarsSystemMock.setup()
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
@@ -172,6 +173,8 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when save-result (sr) is set, when all build steps succeed - writes the result of each step to file" do
+      EnvVarsSystemMock.setup()
+
       previous_run_result_file =
         "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
 
@@ -220,6 +223,8 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when save-result (sr) is NOT set, we don't save the result to file" do
+      EnvVarsSystemMock.setup()
+
       previous_run_result_file =
         "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
 
@@ -235,6 +240,8 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when save-result (sr) is set, when a build step fails - writes the result of each step to file" do
+      EnvVarsSystemMock.setup()
+
       previous_run_result_file =
         "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
 
@@ -281,6 +288,8 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when from failed (ff) is set, save the result to file just like with save result (sr)" do
+      EnvVarsSystemMock.setup()
+
       previous_run_result_file =
         "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
 
@@ -336,6 +345,8 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when from failed (ff) is set, and a previous_run_result file exists, then previously successful build steps are skipped" do
+      EnvVarsSystemMock.setup()
+
       previous_run_result_file =
         "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
 
@@ -443,8 +454,7 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when the save_result_env_var = false or unset, but the --sr flag is set, then the flag overrides the env var and we do save the result to file" do
-      Mimic.copy(System)
-      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> "false" end)
+      EnvVarsSystemMock.setup(save_result: "false")
 
       previous_run_result_file =
         "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"

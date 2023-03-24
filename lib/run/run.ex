@@ -20,9 +20,8 @@ defmodule BuildPipeline.Run do
   end
 
   defp preflight_checks(command_line_args) do
-    command_line_args
-    |> CommandLineArguments.parse()
-    |> Result.and_then(&EnvVars.put_config/1)
+    EnvVars.read()
+    |> Result.and_then(&CommandLineArguments.parse(&1, command_line_args))
     |> Result.and_then(&ConfigFile.read/1)
     |> Result.and_then(&ConfigFile.parse_and_validate/1)
     |> Result.and_then(&TerminalWidth.append_to_setup/1)

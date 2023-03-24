@@ -1,6 +1,7 @@
 defmodule BuildPipelineTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   alias BuildPipeline
+  alias BuildPipeline.Run.Support.EnvVarsSystemMock
   import ExUnit.CaptureIO
 
   describe "main/1" do
@@ -8,6 +9,7 @@ defmodule BuildPipelineTest do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
+      EnvVarsSystemMock.setup()
 
       output =
         capture_io(fn ->

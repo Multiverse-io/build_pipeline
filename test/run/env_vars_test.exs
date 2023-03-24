@@ -2,60 +2,89 @@ defmodule BuildPipeline.Run.EnvVarsTest do
   use ExUnit.Case, async: true
   use Mimic
   alias BuildPipeline.Run.{Const, EnvVars}
+  alias BuildPipeline.Run.Support.EnvVarsSystemMock
 
-  @save_result_env_var_name Const.save_result_env_var_name()
+  @save_result Const.save_result_env_var_name()
+  @from_failed Const.from_failed_env_var_name()
 
-  describe "put_config/1" do
-    test "when the env var is unset, return the same setup given" do
-      Mimic.copy(System)
-      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> nil end)
-
-      setup = %{}
-      assert {:ok, setup} == EnvVars.put_config(setup)
-    end
-
-    test "when the env var is set as true, return the setup with save_result: true in it" do
-      Mimic.copy(System)
-      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> "true" end)
-
-      assert {:ok, %{save_result: true, a: 1}} == EnvVars.put_config(%{a: 1})
-    end
-
-    test "when the env var is set as false, return the setup with save_result: false in it" do
-      Mimic.copy(System)
-      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> "false" end)
-
-      assert {:ok, %{save_result: false}} = EnvVars.put_config(%{})
-    end
-
-    test "when the given setup already has save_result set and the env var is set as <anything valid>, ignore the env var and leave the setup as it was" do
-      Mimic.copy(System)
-      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> "false" end)
-
-      setup = %{save_result: true, a: 1}
-      assert {:ok, setup} == EnvVars.put_config(setup)
-    end
-
-    test "when the given setup already has save_result set to false and the env var is set as true, then set it to true" do
-      Mimic.copy(System)
-      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> "true" end)
-
-      assert {:ok, %{save_result: true, a: 1}} == EnvVars.put_config(%{save_result: false, a: 1})
-    end
-
-    test "when the env var is set to something nonsenseical, return error" do
-      Mimic.copy(System)
-      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> "something nonsenseical" end)
+  describe "read/1" do
+    test "when save result is a nonsense value, returns error" do
+      EnvVarsSystemMock.setup(save_result: "something nonsenseical")
 
       error = """
       The loaded environment variable was
-        #{@save_result_env_var_name}=something nonsenseical
+        #{@save_result}=something nonsenseical
       but I only accept the values
         true
         false
       """
 
-      assert {:error, {:load_env_vars, error}} == EnvVars.put_config(%{})
+      assert {:error, {:load_env_vars, error}} == EnvVars.read()
+    end
+
+    test "when from file is a nonsense value, returns error" do
+      EnvVarsSystemMock.setup(from_failed: "something nonsenseical")
+
+      error = """
+      The loaded environment variable was
+        #{@from_failed}=something nonsenseical
+      but I only accept the values
+        true
+        false
+      """
+
+      assert {:error, {:load_env_vars, error}} == EnvVars.read()
+    end
+  end
+
+  describe "read/1 - with from failed = true" do
+    test "when save_result = unset" do
+      EnvVarsSystemMock.setup(from_failed: "true", save_result: nil)
+      assert {:ok, %{run_from_failed: true, save_result: true}} == EnvVars.read()
+    end
+
+    test "when save_result = false" do
+      EnvVarsSystemMock.setup(from_failed: "true", save_result: "false")
+      assert {:ok, %{run_from_failed: true, save_result: true}} == EnvVars.read()
+    end
+
+    test "when save_result = true" do
+      EnvVarsSystemMock.setup(from_failed: "true", save_result: "true")
+      assert {:ok, %{run_from_failed: true, save_result: true}} == EnvVars.read()
+    end
+  end
+
+  describe "read/1 - with from failed = false" do
+    test "when from_failed = false and save_result = unset" do
+      EnvVarsSystemMock.setup(from_failed: "false", save_result: nil)
+      assert {:ok, %{run_from_failed: false, save_result: false}} == EnvVars.read()
+    end
+
+    test "when from_failed = false and save_result = false" do
+      EnvVarsSystemMock.setup(from_failed: "false", save_result: "false")
+      assert {:ok, %{run_from_failed: false, save_result: false}} == EnvVars.read()
+    end
+
+    test "when from_failed = false and save_result = true" do
+      EnvVarsSystemMock.setup(from_failed: "false", save_result: "true")
+      assert {:ok, %{run_from_failed: false, save_result: true}} == EnvVars.read()
+    end
+  end
+
+  describe "read/1 - with from failed = unset" do
+    test "when from_failed = unset and save_result = unset" do
+      EnvVarsSystemMock.setup(from_failed: nil, save_result: nil)
+      assert {:ok, %{}} == EnvVars.read()
+    end
+
+    test "when from_failed = unset and save_result = false" do
+      EnvVarsSystemMock.setup(from_failed: nil, save_result: "false")
+      assert {:ok, %{save_result: false}} == EnvVars.read()
+    end
+
+    test "when from_failed = unset and save_result = true" do
+      EnvVarsSystemMock.setup(from_failed: nil, save_result: "true")
+      assert {:ok, %{save_result: true}} == EnvVars.read()
     end
   end
 end
