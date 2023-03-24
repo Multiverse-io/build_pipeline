@@ -107,7 +107,11 @@ By default, _output from successful commands are silenced_, and `command` output
 
 ## ./bp run - Options
 `--verbose`  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
+
 `--debug`    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose
+
 `--cwd path` - the path in which to look for the build_pipeline config.json and build scripts. Defaults to "."
+
 `--sr`       - save-result: saves the results of this run to "<cwd>/previous_run_result.json"
+
 `--ff`       - from-failed: sets save-result (--sr) and also if "<cwd>/previous_run_result.json" exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. If no previous_run_result.json file is found then I exit and tell you I couldn't do as you asked.
