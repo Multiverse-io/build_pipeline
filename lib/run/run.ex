@@ -5,6 +5,7 @@ defmodule BuildPipeline.Run do
     EnvVars,
     PreviousRunResult,
     Result,
+    UnskipAllIfSkippingAll,
     Server,
     TerminalWidth
   }
@@ -27,6 +28,7 @@ defmodule BuildPipeline.Run do
     |> Result.and_then(&TerminalWidth.append_to_setup/1)
     |> Result.and_then(&PreviousRunResult.read/1)
     |> Result.and_then(&PreviousRunResult.parse_and_validate/1)
+    |> Result.and_then(&UnskipAllIfSkippingAll.parse/1)
   end
 
   defp run_if_preflight_checks_passed({:ok, setup}) do
