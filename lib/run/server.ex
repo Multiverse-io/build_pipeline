@@ -53,7 +53,7 @@ defmodule BuildPipeline.Run.Server do
   def handle_continue(:start_runners, state) do
     state
     |> start_runners_if_able()
-    |> finished_if_all_runners_done()
+    |> finished_if_all_runners_skipped()
   end
 
   @impl true
@@ -135,7 +135,7 @@ defmodule BuildPipeline.Run.Server do
     end
   end
 
-  defp finished_if_all_runners_done(state) do
+  defp finished_if_all_runners_skipped(state) do
     if all_runners_done?(state) do
       IO.puts("We're done already!")
       {:stop, :normal, state}

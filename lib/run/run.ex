@@ -82,8 +82,12 @@ defmodule BuildPipeline.Run do
           "You asked me to run only the steps that failed last time, and I tried to look in \n#{path}\nfor a file containing the results of the last run, but there was nothing there, so I'm crashing now *death noise*"
         )
 
+      {error_name, details} ->
+        IO.puts("#{inspect(error_name)} error :-(\n")
+        IO.puts(details)
+
       other ->
-        IO.puts("I failed ot startup with an error of\n#{inspect(other)}")
+        IO.puts("I failed to startup with an error of\n#{inspect(other)}")
     end
 
     :error

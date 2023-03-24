@@ -3,10 +3,12 @@ defmodule BuildPipeline.RunTest do
   use Mimic
   import ExUnit.CaptureIO
   alias BuildPipeline.Run
+  alias BuildPipeline.Run.Const
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
   @moduletag timeout: 1_000
+  @save_result_env_var_name Const.save_result_env_var_name()
 
   describe "main" do
     test "can show runner output on the screen" do
@@ -438,6 +440,57 @@ defmodule BuildPipeline.RunTest do
 
       assert output =~
                "I couldn't parse the result the previous run!\n\nI need a JSON list containing a list of only {buildStepName, result},\nbut I was given a result I didn't recognise of \"nonsense\"\n\nI suggest you delete your previous_run_result.json file & run the whole build from scratch...\n\n"
+    end
+
+    test "when the save_result_env_var = false or unset, but the --sr flag is set, then the flag overrides the env var and we do save the result to file" do
+      Mimic.copy(System)
+      Mimic.stub(System, :get_env, fn @save_result_env_var_name -> "false" end)
+
+      previous_run_result_file =
+        "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
+
+      File.rm(previous_run_result_file)
+
+      :ok =
+        Run.main([
+          "--cwd",
+          "./example_projects/complex_yet_functioning",
+          "--sr"
+        ])
+
+      previous_run_result =
+        previous_run_result_file
+        |> File.read!()
+        |> Jason.decode!()
+
+      assert previous_run_result == [
+               %{
+                 "buildStepName" => "tiresNotSlashed",
+                 "result" => "successful"
+               },
+               %{
+                 "buildStepName" => "enoughFuel",
+                 "result" => "successful"
+               },
+               %{
+                 "buildStepName" => "carWorks",
+                 "result" => "successful"
+               },
+               %{
+                 "buildStepName" => "driveToOffice",
+                 "result" => "successful"
+               },
+               %{
+                 "buildStepName" => "approachHuman",
+                 "result" => "successful"
+               },
+               %{
+                 "buildStepName" => "sayHello",
+                 "result" => "successful"
+               }
+             ]
+
+      File.rm(previous_run_result_file)
     end
   end
 end

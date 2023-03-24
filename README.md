@@ -106,8 +106,20 @@ And you're away!
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
 ## ./bp run - Options
+### Command Line Arguments
 `--verbose`  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
+
 `--debug`    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose
+
 `--cwd path` - the path in which to look for the build_pipeline config.json and build scripts. Defaults to "."
+
 `--sr`       - save-result: saves the results of this run to "<cwd>/previous_run_result.json"
+
 `--ff`       - from-failed: sets save-result (--sr) and also if "<cwd>/previous_run_result.json" exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. If no previous_run_result.json file is found then I exit and tell you I couldn't do as you asked.
+
+### Enviroment Variables
+Some `./bp run` options be set by enviroment variables.
+
+In the case of an option being set by both by a command line argument and an environment variable - the command line argument takes precdent.
+
+`BUILD_PIPELINE_SAVE_RESULT=true|false` - the same as setting the command line argument `--sr` (see above)

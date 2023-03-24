@@ -4,6 +4,7 @@ defmodule BuildPipeline.Run.Const do
   def not_started, do: "not started"
   def skipped, do: "skipped"
 
+  # keep value of this env var aligned with what it says in the README.md and usage_instructions
   def save_result_env_var_name, do: "BUILD_PIPELINE_SAVE_RESULT"
 
   def all_results, do: [successful(), failed(), not_started(), skipped()]
