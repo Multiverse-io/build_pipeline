@@ -4,58 +4,95 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   @cwd "--cwd"
   @verbose "--verbose"
   @debug "--debug"
-  @save_result "--sr"
   @from_failed "--ff"
+  @run_all "--ra"
   # keep usage_instructions in sync with the README.md file
   @usage_instructions """
-  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--sr] [--ff]
+  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra]
 
   --verbose  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
+
   --debug    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose. If you're scratching your head wondering what's going wrong, this flag is reccommended.
+
   --cwd path - the path in which to look for the build_pipeline config.json and build scripts. Defaults to "."
-  --sr       - save-result: saves the results of this run to "<cwd>/previous_run_result.json"
-  --ff       - from-failed: sets save-result (--sr) and also if "<cwd>/previous_run_result.json" exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. If no previous_run_result.json file is found then I exit and tell you I couldn't do as you asked.
+
+  --ff       - from-failed: saves the results of this run to "<cwd>/previous_run_result.json", and if sed file already exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. Cannot be set with --ra. from-failed is smart enough to know that if all the build steps we were about to run were going to be skipped - to instead run all the steps.
+
+  --ra       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
+  """
+
+  @incompatible_args_error """
+  I was given some incompatible arguments.
+
+  --ff cannot be set with --ra
+  --verbose cannot be set with --debug
+
+  """
+
+  @bad_args_error """
+  I was given some arguments I don't understand.
+  See below for the arguements I accept
+
   """
 
   def parse(setup, command_line_args) do
-    if @debug in command_line_args and @verbose in command_line_args do
-      {:error, {:bad_cmd_args, @usage_instructions}}
+    if incompatible_args?(command_line_args) do
+      {:error, {:bad_arguments, @incompatible_args_error <> @usage_instructions}}
     else
-      setup
-      |> put_default_setup()
-      |> acc_setup_from_cli_args(command_line_args)
+      setup_from_cli_args(setup, command_line_args)
     end
   end
 
-  def acc_setup_from_cli_args(setup, []) do
+  defp setup_from_cli_args(setup, command_line_args) do
+    case setup |> put_default_setup() |> acc_setup_from_cli_args(command_line_args) do
+      {:ok, setup} -> {:ok, setup}
+      :error -> {:error, {:bad_arguments, @bad_args_error <> @usage_instructions}}
+    end
+  end
+
+  defp acc_setup_from_cli_args(setup, []) do
     {:ok, setup}
   end
 
-  def acc_setup_from_cli_args(setup, [@cwd, cwd | rest]) do
+  defp acc_setup_from_cli_args(setup, [@cwd, cwd | rest]) do
     acc_setup_from_cli_args(Map.put(setup, :cwd, cwd), rest)
   end
 
-  def acc_setup_from_cli_args(setup, [@verbose | rest]) do
-    acc_setup_from_cli_args(Map.put(setup, :mode, :verbose), rest)
+  defp acc_setup_from_cli_args(setup, [cli_arg | rest]) do
+    case put_setup_from_singular_cli_arg(setup, cli_arg) do
+      {:ok, setup} -> acc_setup_from_cli_args(setup, rest)
+      error -> error
+    end
   end
 
-  def acc_setup_from_cli_args(setup, [@debug | rest]) do
-    acc_setup_from_cli_args(Map.put(setup, :mode, :debug), rest)
+  defp put_setup_from_singular_cli_arg(setup, @verbose) do
+    {:ok, Map.put(setup, :mode, :verbose)}
   end
 
-  def acc_setup_from_cli_args(setup, [@save_result | rest]) do
-    acc_setup_from_cli_args(Map.put(setup, :save_result, true), rest)
+  defp put_setup_from_singular_cli_arg(setup, @debug) do
+    {:ok, Map.put(setup, :mode, :debug)}
   end
 
-  def acc_setup_from_cli_args(setup, [@from_failed | rest]) do
-    setup
-    |> Map.put(:save_result, true)
-    |> Map.put(:run_from_failed, true)
-    |> acc_setup_from_cli_args(rest)
+  defp put_setup_from_singular_cli_arg(setup, @run_all) do
+    {:ok, Map.put(setup, :run_from_failed, false)}
   end
 
-  def acc_setup_from_cli_args(_step, nonsense) do
-    {:error, {:bad_cmd_args, Enum.join(nonsense, " "), @usage_instructions}}
+  defp put_setup_from_singular_cli_arg(setup, @from_failed) do
+    setup =
+      setup
+      |> Map.put(:save_result, true)
+      |> Map.put(:run_from_failed, true)
+
+    {:ok, setup}
+  end
+
+  defp put_setup_from_singular_cli_arg(_setup, _bad) do
+    :error
+  end
+
+  defp incompatible_args?(command_line_args) do
+    (@debug in command_line_args and @verbose in command_line_args) or
+      (@run_all in command_line_args and @from_failed in command_line_args)
   end
 
   defp put_default_setup(setup) do

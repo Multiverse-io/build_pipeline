@@ -21,7 +21,7 @@ defmodule BuildPipeline.Run.PreviousRunResultTest do
       assert PreviousRunResult.read(setup) == {:ok, {"some cool file contents", setup}}
     end
 
-    test "with run_from_failed: true, but no file can be found, return error" do
+    test "with run_from_failed: true, but no file can be found, return OK & empty JSON" do
       Mimic.copy(File)
       Mimic.stub(File, :read, fn _file_name -> {:error, :enoent} end)
 
@@ -30,10 +30,7 @@ defmodule BuildPipeline.Run.PreviousRunResultTest do
         |> ServerSetupBuilder.with_run_from_failed(true)
         |> ServerSetupBuilder.with_cwd("cool/dir")
 
-      assert PreviousRunResult.read(setup) ==
-               {:error,
-                {:previous_run_result_file_not_found,
-                 "cool/dir/build_pipeline/previous_run_result.json"}}
+      assert PreviousRunResult.read(setup) == {:ok, {"{}", setup}}
     end
   end
 

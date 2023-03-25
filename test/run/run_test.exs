@@ -101,15 +101,9 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "returns error if given nonsense CLI args" do
-      output =
-        capture_io(fn ->
-          assert :error ==
-                   Run.main([
-                     "--nonesense"
-                   ])
-        end)
+      output = capture_io(fn -> assert :error == Run.main(["--nonesense"]) end)
 
-      assert output =~ "There was at least one bad argument in the command line"
+      assert output =~ "I was given some arguments I don't understand."
     end
 
     test "returns error if the config file is not found" do
@@ -172,56 +166,6 @@ defmodule BuildPipeline.RunTest do
                "I tried to run 'tput cols' but it returned a result I couldn't parse! Damn\n"
     end
 
-    test "when save-result (sr) is set, when all build steps succeed - writes the result of each step to file" do
-      EnvVarsSystemMock.setup()
-
-      previous_run_result_file =
-        "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
-
-      File.rm(previous_run_result_file)
-
-      :ok =
-        Run.main([
-          "--cwd",
-          "./example_projects/complex_yet_functioning",
-          "--sr"
-        ])
-
-      previous_run_result =
-        previous_run_result_file
-        |> File.read!()
-        |> Jason.decode!()
-
-      assert previous_run_result == [
-               %{
-                 "buildStepName" => "tiresNotSlashed",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "enoughFuel",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "carWorks",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "driveToOffice",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "approachHuman",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "sayHello",
-                 "result" => "successful"
-               }
-             ]
-
-      File.rm(previous_run_result_file)
-    end
-
     test "when save-result (sr) is NOT set, we don't save the result to file" do
       EnvVarsSystemMock.setup()
 
@@ -239,7 +183,7 @@ defmodule BuildPipeline.RunTest do
       assert File.exists?(previous_run_result_file) == false
     end
 
-    test "when save-result (sr) is set, when a build step fails - writes the result of each step to file" do
+    test "when from failed (ff) is set, save the result to file, when running it again, read the file & skip the previously successful build steps" do
       EnvVarsSystemMock.setup()
 
       previous_run_result_file =
@@ -251,7 +195,7 @@ defmodule BuildPipeline.RunTest do
         Run.main([
           "--cwd",
           "./example_projects/complex_and_failing",
-          "--sr"
+          "--ff"
         ])
 
       previous_run_result =
@@ -285,22 +229,6 @@ defmodule BuildPipeline.RunTest do
                  "result" => "not started"
                }
              ]
-    end
-
-    test "when from failed (ff) is set, save the result to file just like with save result (sr)" do
-      EnvVarsSystemMock.setup()
-
-      previous_run_result_file =
-        "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
-
-      File.rm(previous_run_result_file)
-
-      :ok =
-        Run.main([
-          "--cwd",
-          "./example_projects/complex_and_failing",
-          "--sr"
-        ])
 
       :ok =
         Run.main([
@@ -342,70 +270,6 @@ defmodule BuildPipeline.RunTest do
              ]
 
       File.rm(previous_run_result_file)
-    end
-
-    test "when from failed (ff) is set, and a previous_run_result file exists, then previously successful build steps are skipped" do
-      EnvVarsSystemMock.setup()
-
-      previous_run_result_file =
-        "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
-
-      File.rm(previous_run_result_file)
-
-      :ok = Run.main(["--cwd", "./example_projects/complex_and_failing", "--sr"])
-
-      :ok = Run.main(["--cwd", "./example_projects/complex_and_failing", "--ff"])
-
-      previous_run_result = previous_run_result_file |> File.read!() |> Jason.decode!()
-
-      assert previous_run_result == [
-               %{
-                 "buildStepName" => "tiresNotSlashed",
-                 "result" => "skipped"
-               },
-               %{
-                 "buildStepName" => "enoughFuel",
-                 "result" => "skipped"
-               },
-               %{
-                 "buildStepName" => "carWorks",
-                 "result" => "skipped"
-               },
-               %{
-                 "buildStepName" => "driveToOffice",
-                 "result" => "failed"
-               },
-               %{
-                 "buildStepName" => "approachHuman",
-                 "result" => "not started"
-               },
-               %{
-                 "buildStepName" => "sayHello",
-                 "result" => "not started"
-               }
-             ]
-
-      File.rm(previous_run_result_file)
-    end
-
-    test "when from failed (ff) is set, but the file can't be found, returns an error" do
-      previous_run_result_file =
-        "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
-
-      File.rm(previous_run_result_file)
-
-      output =
-        capture_io(fn ->
-          assert :error =
-                   Run.main([
-                     "--cwd",
-                     "./example_projects/complex_and_failing",
-                     "--ff"
-                   ])
-        end)
-
-      assert output =~
-               "You asked me to run only the steps that failed last time, and I tried to look in \n#{previous_run_result_file}\nfor a file containing the results of the last run, but there was nothing there, so I'm crashing now *death noise*"
     end
 
     test "when from failed (ff) is set, but with invalid JSON in the file, returns an error" do
@@ -451,56 +315,6 @@ defmodule BuildPipeline.RunTest do
 
       assert output =~
                "I couldn't parse the result the previous run!\n\nI need a JSON list containing a list of only {buildStepName, result},\nbut I was given a result I didn't recognise of \"nonsense\"\n\nI suggest you delete your previous_run_result.json file & run the whole build from scratch...\n\n"
-    end
-
-    test "when the save_result_env_var = false or unset, but the --sr flag is set, then the flag overrides the env var and we do save the result to file" do
-      EnvVarsSystemMock.setup(save_result: "false")
-
-      previous_run_result_file =
-        "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
-
-      File.rm(previous_run_result_file)
-
-      :ok =
-        Run.main([
-          "--cwd",
-          "./example_projects/complex_yet_functioning",
-          "--sr"
-        ])
-
-      previous_run_result =
-        previous_run_result_file
-        |> File.read!()
-        |> Jason.decode!()
-
-      assert previous_run_result == [
-               %{
-                 "buildStepName" => "tiresNotSlashed",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "enoughFuel",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "carWorks",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "driveToOffice",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "approachHuman",
-                 "result" => "successful"
-               },
-               %{
-                 "buildStepName" => "sayHello",
-                 "result" => "successful"
-               }
-             ]
-
-      File.rm(previous_run_result_file)
     end
   end
 end

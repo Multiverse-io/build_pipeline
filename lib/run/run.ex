@@ -44,13 +44,6 @@ defmodule BuildPipeline.Run do
 
   defp run_if_preflight_checks_passed({:error, error}) do
     case error do
-      {:bad_cmd_args, bad_cmd_args, usage_instructions} ->
-        IO.puts(
-          "There was at least one bad argument in the command line arguments that you gave me:\n" <>
-            "#{bad_cmd_args}\n" <>
-            "#{usage_instructions}"
-        )
-
       {:invalid_config, %Jason.DecodeError{}} ->
         IO.puts("I failed to parse the config.json because it was not valid JSON")
 
@@ -77,11 +70,6 @@ defmodule BuildPipeline.Run do
 
       {:previous_run_result, error} ->
         IO.puts(error)
-
-      {:previous_run_result_file_not_found, path} ->
-        IO.puts(
-          "You asked me to run only the steps that failed last time, and I tried to look in \n#{path}\nfor a file containing the results of the last run, but there was nothing there, so I'm crashing now *death noise*"
-        )
 
       {error_name, details} ->
         IO.puts("#{inspect(error_name)} error :-(\n")

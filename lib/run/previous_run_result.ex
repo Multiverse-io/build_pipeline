@@ -13,7 +13,8 @@ defmodule BuildPipeline.Run.PreviousRunResult do
 
     case File.read(file_location) do
       {:ok, file_contents} -> {:ok, {file_contents, config}}
-      _ -> {:error, {:previous_run_result_file_not_found, file_location}}
+      {:error, :enoent} -> {:ok, {"{}", config}}
+      error -> {:error, {:loading_previous_run_result_file, error}}
     end
   end
 
