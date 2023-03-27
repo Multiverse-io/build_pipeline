@@ -3,7 +3,7 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
   alias BuildPipeline.Run.CommandLineArguments
 
   @usage_instructions """
-  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra]
+  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra] [--stats]
 
   --verbose  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
 
@@ -14,11 +14,13 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
   --ff       - from-failed: saves the results of this run to "<cwd>/previous_run_result.json", and if sed file already exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. Cannot be set with --ra. from-failed is smart enough to know that if all the build steps we were about to run were going to be skipped - to instead run all the steps.
 
   --ra       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
+
+  --stats    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
   """
 
   @bad_args_error """
                   I was given some arguments I don't understand.
-                  See below for the arguements I accept
+                  See below for the arguments I accept
 
                   """ <> @usage_instructions
 
@@ -26,25 +28,48 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                            I was given some incompatible arguments.
 
                            --ff cannot be set with --ra
-                           --verbose cannot be set with --debug
+                           --debug cannot be set with --verbose
+                           --debug cannot be set with --stats
 
                            """ <> @usage_instructions
 
   describe "parse/1" do
     test "given no overlapping existing setup & no command line args, puts the default setup" do
-      assert {:ok, %{cwd: ".", mode: :normal, save_result: false, run_from_failed: false, a: 1}} ==
+      assert {:ok,
+              %{
+                cwd: ".",
+                mode: :normal,
+                save_result: false,
+                run_from_failed: false,
+                a: 1,
+                show_stats: false
+              }} ==
                CommandLineArguments.parse(%{a: 1}, [])
     end
 
     test "given overlapping existing setup, the CLI args setup overrides the existing setup" do
-      assert {:ok, %{cwd: ".", mode: :normal, save_result: true, run_from_failed: true}} ==
+      assert {:ok,
+              %{
+                cwd: ".",
+                mode: :normal,
+                save_result: true,
+                run_from_failed: true,
+                show_stats: false
+              }} ==
                CommandLineArguments.parse(%{save_result: false, run_from_failed: false}, [
                  "--ff"
                ])
     end
 
     test "with no args returns the default setup" do
-      assert {:ok, %{cwd: ".", mode: :normal, save_result: false, run_from_failed: false}} ==
+      assert {:ok,
+              %{
+                cwd: ".",
+                mode: :normal,
+                save_result: false,
+                run_from_failed: false,
+                show_stats: false
+              }} ==
                CommandLineArguments.parse(%{}, [])
     end
 
@@ -95,6 +120,15 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
 
     test "with --ff from failed, returns save_result: true" do
       assert {:ok, %{save_result: true}} = CommandLineArguments.parse(%{}, ["--ff"])
+    end
+
+    test "with --stats, returns show_stats: true" do
+      assert {:ok, %{show_stats: true}} = CommandLineArguments.parse(%{}, ["--stats"])
+    end
+
+    test "with --stats and --debug, returns an error because these args are incompatible" do
+      assert {:error, {:bad_arguments, @incompatible_args_error}} =
+               CommandLineArguments.parse(%{}, ["--debug", "--stats", "--cwd", "cool/path"])
     end
   end
 end

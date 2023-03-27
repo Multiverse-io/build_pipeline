@@ -3,7 +3,8 @@ defmodule BuildPipeline.Run.Server do
 
   alias BuildPipeline.Run.{
     BuildStepRunner,
-    FinalResult,
+    PreviousRunResultFileWriter,
+    Statistics,
     TerminalPrinter,
     TerminalMessages,
     WhichBuildStepsCanRun
@@ -127,7 +128,8 @@ defmodule BuildPipeline.Run.Server do
         |> TerminalMessages.failed_output(result)
         |> TerminalPrinter.runner_update(state)
 
-        FinalResult.write(state, runner_pid, exit_code)
+        Statistics.print(state)
+        PreviousRunResultFileWriter.write(state, runner_pid, exit_code)
         {:stop, :normal, state}
     end
   end
@@ -143,7 +145,8 @@ defmodule BuildPipeline.Run.Server do
 
   defp finished_if_all_runners_done(state, runner_pid, exit_code) do
     if all_runners_done?(state) do
-      FinalResult.write(state, runner_pid, exit_code)
+      Statistics.print(state)
+      PreviousRunResultFileWriter.write(state, runner_pid, exit_code)
       {:stop, :normal, state}
     else
       {:noreply, state}

@@ -94,7 +94,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
     runner
     |> with_exit_code(0)
     |> with_output("#{build_step_name}\n")
-    |> with_duration_in_microseconds(1557)
+    |> with_duration_in_microseconds(random_duration_in_microseconds())
     |> with_status(:complete)
   end
 
@@ -145,4 +145,5 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
   end
 
   defp positive_number, do: System.unique_integer([:positive])
+  defp random_duration_in_microseconds, do: Enum.random(1..2_000_000)
 end

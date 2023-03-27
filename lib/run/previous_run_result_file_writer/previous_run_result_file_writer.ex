@@ -1,5 +1,5 @@
-defmodule BuildPipeline.Run.FinalResult do
-  alias BuildPipeline.Run.FinalResult.Builder
+defmodule BuildPipeline.Run.PreviousRunResultFileWriter do
+  alias BuildPipeline.Run.PreviousRunResultFileWriter.Builder
 
   def write(%{save_result: true} = server_state, runner_pid, exit_code) do
     server_state

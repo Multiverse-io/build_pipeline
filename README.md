@@ -105,9 +105,9 @@ And you're away!
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
 
-### Reccomendations on how to run build_pipeline on CI vs localy
+## Reccomendations on how to run build_pipeline on CI vs localy
 
-## On CI
+### On CI
 On CI it is reccommended to run either
 
 `./bp run`
@@ -118,14 +118,14 @@ Without `--verbose` (as mentioned earlier) _output from successful commands are 
 
 with `--verbose`, output of successful commands _are_ printed to the terminal, but be advised that output from successful commands are only printed when they are finished, not in real-time.
 
-## Locally
+### Locally
 Locally it is reccommended to put
 `export BUILD_PIPELINE_FROM_FAILED=true`
 in your ~/.bashrc, ~/.zshrc, or whatever you use
 
 such that `./bp run` will always run in run-from-failed mode (as if you're always running `./bp run --ff`)
 
-Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily be overriden by running it with run all `--ra` set: `./bp run --ra`.
+Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily be overriden as a one-off by running it with run all `--ra` set: `./bp run --ra`.
 
 
 ## ./bp run - Options
@@ -139,6 +139,8 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 `--ff`       - from-failed: saves the results of this run to "<cwd>/previous_run_result.json", and if sed file already exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. Cannot be set with --ra. from-failed is smart enough to know that if all the build steps we were about to run were going to be skipped - to instead run all the steps.
 
 `--ra`       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
+
+`--stats`    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
 
 ### Enviroment Variables
 Some `./bp run` options be set by enviroment variables.

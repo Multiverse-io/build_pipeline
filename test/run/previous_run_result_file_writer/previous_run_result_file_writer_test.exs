@@ -1,7 +1,7 @@
-defmodule BuildPipeline.Run.FinalResultTest do
+defmodule BuildPipeline.Run.PreviousRunResultFileWriterTest do
   use ExUnit.Case, async: true
   use Mimic
-  alias BuildPipeline.Run.{FinalResult, Const}
+  alias BuildPipeline.Run.{PreviousRunResultFileWriter, Const}
   alias BuildPipeline.Run.Builders.{RunnersBuilder, ServerStateBuilder}
 
   describe "write/3" do
@@ -24,7 +24,7 @@ defmodule BuildPipeline.Run.FinalResultTest do
         |> ServerStateBuilder.with_runners(%{runner_pid => runner})
         |> ServerStateBuilder.with_save_result(true)
 
-      {file, content} = FinalResult.write(server_state, runner_pid, 0)
+      {file, content} = PreviousRunResultFileWriter.write(server_state, runner_pid, 0)
 
       assert file == "cool_dir/build_pipeline/previous_run_result.json"
 
@@ -54,7 +54,7 @@ defmodule BuildPipeline.Run.FinalResultTest do
         |> ServerStateBuilder.with_cwd("cool_dir")
         |> ServerStateBuilder.with_runners(%{runner_pid => runner})
 
-      assert :noop = FinalResult.write(server_state, runner_pid, 0)
+      assert :noop = PreviousRunResultFileWriter.write(server_state, runner_pid, 0)
     end
   end
 end

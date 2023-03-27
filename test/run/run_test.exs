@@ -316,5 +316,56 @@ defmodule BuildPipeline.RunTest do
       assert output =~
                "I couldn't parse the result the previous run!\n\nI need a JSON list containing a list of only {buildStepName, result},\nbut I was given a result I didn't recognise of \"nonsense\"\n\nI suggest you delete your previous_run_result.json file & run the whole build from scratch...\n\n"
     end
+
+    test "running with --stats puts some stats on the screen" do
+      original_env = Application.get_env(:build_pipeline, :print_runner_output)
+
+      Application.put_env(:build_pipeline, :print_runner_output, true)
+      EnvVarsSystemMock.setup()
+
+      # TODO delete the duplicate running here!
+      assert :ok ==
+               Run.main([
+                 "--cwd",
+                 "./example_projects/complex_yet_functioning",
+                 "--stats"
+               ])
+
+      output =
+        capture_io(fn ->
+          assert :ok ==
+                   Run.main([
+                     "--cwd",
+                     "./example_projects/complex_yet_functioning",
+                     "--stats"
+                   ])
+        end)
+
+      # assert output =~ "echo tires [Pending]"
+      # assert output =~ "echo tires [Running]"
+      # assert output =~ "echo tires [Succeeded in"
+
+      # assert output =~ "echo fuel [Pending]"
+      # assert output =~ "echo fuel [Running]"
+      # assert output =~ "echo fuel [Succeeded in"
+
+      # assert output =~ "echo car works [Pending]"
+      # assert output =~ "echo car works [Running]"
+      # assert output =~ "echo car works [Succeeded in"
+
+      # assert output =~ "echo walk over [Pending]"
+      # assert output =~ "echo walk over [Running]"
+      # assert output =~ "echo walk over [Succeeded in"
+
+      # assert output =~ "echo hello [Pending]"
+      # assert output =~ "echo hello [Running]"
+      # assert output =~ "echo hello [Succeeded in"
+
+      # regex = ~r|some output|
+      # assert Regex.match?(regex, output)
+      flunk("no")
+
+      Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
   end
 end

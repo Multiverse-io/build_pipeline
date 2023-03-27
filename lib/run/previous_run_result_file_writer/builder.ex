@@ -1,4 +1,4 @@
-defmodule BuildPipeline.Run.FinalResult.Builder do
+defmodule BuildPipeline.Run.PreviousRunResultFileWriter.Builder do
   alias BuildPipeline.Run.Const
 
   @successful Const.successful()

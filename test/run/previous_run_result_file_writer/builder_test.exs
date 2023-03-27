@@ -1,8 +1,8 @@
-defmodule BuildPipeline.Run.FinalResult.BuilderTest do
+defmodule BuildPipeline.Run.PreviousRunResultFileWriter.BuilderTest do
   use ExUnit.Case, async: true
   alias BuildPipeline.Run.Builders.{RunnersBuilder, ServerStateBuilder}
   alias BuildPipeline.Run.Const
-  alias BuildPipeline.Run.FinalResult.Builder
+  alias BuildPipeline.Run.PreviousRunResultFileWriter.Builder
 
   describe "build/3" do
     test "given server_state, a runner PID and it's exit code, builds the final result JSON" do
