@@ -7,26 +7,33 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
     test "x" do
       a =
         RunnersBuilder.build_complete()
-        |> RunnersBuilder.with_build_step_name("a")
+        |> RunnersBuilder.with_command("a")
         |> RunnersBuilder.with_duration_in_microseconds(1)
 
       b =
         RunnersBuilder.build_complete()
-        |> RunnersBuilder.with_build_step_name("b")
+        |> RunnersBuilder.with_command("b")
         |> RunnersBuilder.with_duration_in_microseconds(2)
         |> RunnersBuilder.with_depends_on(MapSet.new(["a"]))
 
-      #TODO continue here dude
-      assert Generator.dependency_tree_branches([a]) ==
-               [
-                 %{
-                   build_steps: [
-                     %{build_step_name: "a", duration_in_microseconds: 1, status: :complete},
-                     %{build_step_name: "b", duration_in_microseconds: 2, status: :complete}
-                   ],
-                   duration_in_microseconds: 3
+      c =
+        RunnersBuilder.build_complete()
+        |> RunnersBuilder.with_command("c")
+        |> RunnersBuilder.with_duration_in_microseconds(4)
+        |> RunnersBuilder.with_depends_on(MapSet.new(["a"]))
+
+      # TODO continue here dude
+      assert Generator.dependency_tree_branches([a, b, c]) ==
+               %{
+                 tree: %{
+                   "a" => %{"b" => nil, "c" => nil}
+                 },
+                 build_steps: %{
+                   "a" => %{duration_in_microseconds: 1, status: :complete, exit_code: 0},
+                   "b" => %{duration_in_microseconds: 2, status: :complete, exit_code: 0},
+                   "c" => %{duration_in_microseconds: 4, status: :complete, exit_code: 0}
                  }
-               ]
+               }
     end
   end
 end
