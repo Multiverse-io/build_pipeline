@@ -5,13 +5,11 @@ defmodule BuildPipeline.Run.UnskipAllIfSkippingAllTest do
 
   describe "parse/1" do
     test "doesn't change anything if there's a build step which isn't being skipped" do
-      runner_1 =
-        RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(false)
+      runner_1 = RunnersBuilder.build_incomplete()
 
       runner_2 =
         RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
 
       setup =
         ServerSetupBuilder.build()
@@ -24,11 +22,11 @@ defmodule BuildPipeline.Run.UnskipAllIfSkippingAllTest do
     test "if all steps are being skipped and we're in run_from_failed mode, then unskip them all!" do
       runner_1 =
         RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
 
       runner_2 =
         RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
 
       setup =
         ServerSetupBuilder.build()
@@ -37,18 +35,18 @@ defmodule BuildPipeline.Run.UnskipAllIfSkippingAllTest do
 
       assert {:ok,
               %{
-                build_pipeline: [%{skip: false}, %{skip: false}]
+                build_pipeline: [%{status: :incomplete}, %{status: :incomplete}]
               }} = UnskipAllIfSkippingAll.parse(setup)
     end
 
     test "if all steps are being skipped and we're NOT in run_from_failed mode, then don't change anything" do
       runner_1 =
         RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
 
       runner_2 =
         RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
 
       setup =
         ServerSetupBuilder.build()

@@ -83,10 +83,7 @@ defmodule BuildPipeline.Run.Server do
       |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
       |> Enum.map(fn {_, build_step} -> build_step end)
 
-    failed? =
-      Enum.any?(build_pipeline, fn build_step ->
-        build_step.status == :incomplete && build_step.skip == false
-      end)
+    failed? = Enum.any?(build_pipeline, fn build_step -> build_step.status == :incomplete end)
 
     if failed? do
       %{build_pipeline: build_pipeline, result: :failure}
@@ -154,8 +151,8 @@ defmodule BuildPipeline.Run.Server do
   end
 
   defp all_runners_done?(state) do
-    Enum.all?(state.runners, fn {_runner_pid, %{status: status, skip: skip}} ->
-      skip == true || status == :complete
+    Enum.all?(state.runners, fn {_runner_pid, %{status: status}} ->
+      status in [:skip, :complete]
     end)
   end
 
@@ -176,10 +173,7 @@ defmodule BuildPipeline.Run.Server do
       {:ok, runner_pid} =
         BuildStepRunner.start_link(build_step, self(), cwd, print_cmd_output: mode == :debug)
 
-      build_step =
-        build_step
-        |> Map.put(:status, :incomplete)
-        |> Map.put(:terminal_line_number, build_step.order + 1)
+      build_step = Map.put(build_step, :terminal_line_number, build_step.order + 1)
 
       Map.put(runners, runner_pid, build_step)
     end)

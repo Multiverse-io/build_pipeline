@@ -285,22 +285,20 @@ defmodule BuildPipeline.Run.WhichBuildStepsCanRunTest do
           runner_pid_1 =>
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(0)
-            |> RunnersBuilder.with_skip(true)
+            |> RunnersBuilder.with_status_skip()
             |> RunnersBuilder.with_depends_on(MapSet.new([])),
           runner_pid_2 =>
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(1)
-            |> RunnersBuilder.with_skip(false)
             |> RunnersBuilder.with_depends_on(MapSet.new([])),
           runner_pid_3 =>
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(3)
-            |> RunnersBuilder.with_skip(true)
+            |> RunnersBuilder.with_status_skip()
             |> RunnersBuilder.with_depends_on(MapSet.new([])),
           runner_pid_4 =>
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(4)
-            |> RunnersBuilder.with_skip(false)
             |> RunnersBuilder.with_depends_on(MapSet.new([]))
         }
 
@@ -326,13 +324,12 @@ defmodule BuildPipeline.Run.WhichBuildStepsCanRunTest do
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(0)
             |> RunnersBuilder.with_build_step_name("0")
-            |> RunnersBuilder.with_skip(true)
+            |> RunnersBuilder.with_status_skip()
             |> RunnersBuilder.with_depends_on(MapSet.new([])),
           runner_pid_2 =>
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(1)
             |> RunnersBuilder.with_build_step_name("1")
-            |> RunnersBuilder.with_skip(false)
             |> RunnersBuilder.with_depends_on(MapSet.new(["0"]))
         }
 
@@ -357,13 +354,13 @@ defmodule BuildPipeline.Run.WhichBuildStepsCanRunTest do
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(0)
             |> RunnersBuilder.with_build_step_name("0")
-            |> RunnersBuilder.with_skip(true)
+            |> RunnersBuilder.with_status_skip()
             |> RunnersBuilder.with_depends_on(MapSet.new([])),
           runner_pid_2 =>
             RunnersBuilder.build_incomplete()
             |> RunnersBuilder.with_order(1)
             |> RunnersBuilder.with_build_step_name("1")
-            |> RunnersBuilder.with_skip(true)
+            |> RunnersBuilder.with_status_skip()
             |> RunnersBuilder.with_depends_on(MapSet.new([]))
         }
 

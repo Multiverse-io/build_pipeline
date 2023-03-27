@@ -37,11 +37,11 @@ defmodule BuildPipeline.Run.FinalResult.Builder do
     exit_code_to_result(exit_code)
   end
 
-  defp runner_result(%{skip: true}) do
+  defp runner_result(%{status: :skip}) do
     @skipped
   end
 
-  defp runner_result(%{status: :incomplete, skip: false}) do
+  defp runner_result(%{status: :incomplete}) do
     @not_started
   end
 end

@@ -14,7 +14,7 @@ defmodule BuildPipeline.Run.PreviousRunResult do
     case File.read(file_location) do
       {:ok, file_contents} -> {:ok, {file_contents, config}}
       {:error, :enoent} -> {:ok, {"{}", config}}
-      error -> {:error, {:loading_previous_run_result_file, error}}
+      {:error, error} -> {:error, {:loading_previous_run_result_file, error}}
     end
   end
 
@@ -55,15 +55,23 @@ defmodule BuildPipeline.Run.PreviousRunResult do
   end
 
   defp update_build_step(build_pipeline, step_name, result) when result in @skipable_results do
-    put_build_step_skip(build_pipeline, step_name, true)
+    fun = fn build_pipeline -> put_in(build_pipeline, [step_name, :status], :skip) end
+    update_build_step_with_fun(build_pipeline, step_name, fun)
   end
 
   defp update_build_step(build_pipeline, step_name, result) when result in @unskipable_results do
-    put_build_step_skip(build_pipeline, step_name, false)
+    update_build_step_with_fun(build_pipeline, step_name, fn build_pipeline -> build_pipeline end)
   end
 
   defp update_build_step(_build_pipeline, _step_name, result) do
     {:halt, {:error, {:previous_run_result, unknown_result_error(result)}}}
+  end
+
+  defp update_build_step_with_fun(build_pipeline, step_name, fun) do
+    case Map.get(build_pipeline, step_name) do
+      nil -> {:halt, {:error, {:previous_run_result, unknown_build_step_name_error(step_name)}}}
+      _build_step -> {:cont, {:ok, fun.(build_pipeline)}}
+    end
   end
 
   defp unknown_result_error(result) do
@@ -97,13 +105,6 @@ defmodule BuildPipeline.Run.PreviousRunResult do
 
     I suggest you delete your previous_run_result.json file & run the whole build from scratch...
     """
-  end
-
-  defp put_build_step_skip(build_pipeline, step_name, skip) do
-    case Map.get(build_pipeline, step_name) do
-      nil -> {:halt, {:error, {:previous_run_result, unknown_build_step_name_error(step_name)}}}
-      _build_step -> {:cont, {:ok, put_in(build_pipeline, [step_name, :skip], skip)}}
-    end
   end
 
   defp build_pipeline_to_map(build_pipeline) do

@@ -9,8 +9,7 @@ defmodule BuildPipeline.Run.Builders.BuildStepBuilder do
       command: @noop_command_in_bash,
       command_env_vars: [],
       command_type: :shell_command,
-      depends_on: MapSet.new(),
-      skip: false
+      depends_on: MapSet.new()
     }
   end
 

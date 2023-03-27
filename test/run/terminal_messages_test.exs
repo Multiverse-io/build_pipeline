@@ -71,7 +71,6 @@ defmodule BuildPipeline.Run.TerminalMessagesTest do
 
       runner_1 =
         RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(false)
         |> RunnersBuilder.with_command("echo 'hi mom'")
         |> RunnersBuilder.with_order(1)
 
@@ -79,7 +78,7 @@ defmodule BuildPipeline.Run.TerminalMessagesTest do
 
       runner_2 =
         RunnersBuilder.build_incomplete()
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
         |> RunnersBuilder.with_command("echo 'walk over to mom'")
         |> RunnersBuilder.with_order(0)
 
@@ -425,10 +424,10 @@ defmodule BuildPipeline.Run.TerminalMessagesTest do
 
     test "skipped runners don't come up as aborted" do
       runners = %{
-        "fake_pid_1" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_skip(true),
-        "fake_pid_2" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_skip(true),
-        "fake_pid_3" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_skip(false),
-        "fake_pid_4" => RunnersBuilder.build_complete() |> RunnersBuilder.with_skip(false)
+        "fake_pid_1" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_status_skip(),
+        "fake_pid_2" => RunnersBuilder.build_incomplete() |> RunnersBuilder.with_status_skip(),
+        "fake_pid_3" => RunnersBuilder.build_incomplete(),
+        "fake_pid_4" => RunnersBuilder.build_complete()
       }
 
       server_state =

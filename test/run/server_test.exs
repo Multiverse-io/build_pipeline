@@ -272,7 +272,7 @@ defmodule BuildPipeline.Run.ServerTest do
         |> RunnersBuilder.with_build_step_name("echo")
         |> RunnersBuilder.with_command("echo hi")
         |> RunnersBuilder.with_command_type(:shell_command)
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
 
       server_setup =
         ServerSetupBuilder.build()

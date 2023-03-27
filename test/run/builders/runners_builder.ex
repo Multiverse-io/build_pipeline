@@ -11,8 +11,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
         depends_on: MapSet.new([]),
         order: 0,
         status: :incomplete,
-        terminal_line_number: 1,
-        skip: false
+        terminal_line_number: 1
       },
       "fake_pid_2" => %{
         build_step_name: "enoughFuel",
@@ -22,8 +21,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
         depends_on: MapSet.new([]),
         order: 1,
         status: :incomplete,
-        terminal_line_number: 2,
-        skip: false
+        terminal_line_number: 2
       },
       "fake_pid_3" => %{
         build_step_name: "carWorks",
@@ -33,8 +31,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
         depends_on: MapSet.new(["enoughFuel", "tiresNotSlashed"]),
         order: 2,
         status: :incomplete,
-        terminal_line_number: 3,
-        skip: false
+        terminal_line_number: 3
       },
       "fake_pid_4" => %{
         build_step_name: "driveToOffice",
@@ -44,8 +41,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
         depends_on: MapSet.new(["carWorks"]),
         order: 3,
         status: :incomplete,
-        terminal_line_number: 4,
-        skip: false
+        terminal_line_number: 4
       },
       "fake_pid_5" => %{
         build_step_name: "approachHuman",
@@ -55,8 +51,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
         depends_on: MapSet.new(["driveToOffice"]),
         order: 4,
         status: :incomplete,
-        terminal_line_number: 5,
-        skip: false
+        terminal_line_number: 5
       },
       "fake_pid_6" => %{
         build_step_name: "sayHello",
@@ -66,8 +61,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
         depends_on: MapSet.new(["approachHuman"]),
         order: 5,
         status: :incomplete,
-        terminal_line_number: 6,
-        skip: false
+        terminal_line_number: 6
       }
     }
   end
@@ -88,8 +82,7 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
       order: 0,
       output: "#{build_step_name}\n",
       status: :incomplete,
-      terminal_line_number: 1,
-      skip: false
+      terminal_line_number: 1
     }
   end
 
@@ -135,8 +128,8 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
     Map.put(runner, :duration_in_microseconds, duration_in_microseconds)
   end
 
-  def with_skip(runner, skip) do
-    Map.put(runner, :skip, skip)
+  def with_status_skip(runner) do
+    with_status(runner, :skip)
   end
 
   def with_depends_on(runner, depends_on) do

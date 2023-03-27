@@ -32,6 +32,32 @@ defmodule BuildPipeline.Run.PreviousRunResultTest do
 
       assert PreviousRunResult.read(setup) == {:ok, {"{}", setup}}
     end
+
+    test "with run_from_failed: true, but some other error, return error" do
+      Mimic.copy(File)
+      Mimic.stub(File, :read, fn _file_name -> {:error, :eacces} end)
+
+      setup =
+        ServerSetupBuilder.build()
+        |> ServerSetupBuilder.with_run_from_failed(true)
+        |> ServerSetupBuilder.with_cwd("cool/dir")
+
+      assert PreviousRunResult.read(setup) ==
+               {:error, {:loading_previous_run_result_file, :eacces}}
+    end
+
+    test "with run_from_failed: true, but some totally mad unexpected return from read file, return error" do
+      Mimic.copy(File)
+      Mimic.stub(File, :read, fn _file_name -> {:error, "totally mad error"} end)
+
+      setup =
+        ServerSetupBuilder.build()
+        |> ServerSetupBuilder.with_run_from_failed(true)
+        |> ServerSetupBuilder.with_cwd("cool/dir")
+
+      assert PreviousRunResult.read(setup) ==
+               {:error, {:loading_previous_run_result_file, "totally mad error"}}
+    end
   end
 
   describe "parse_and_validate/2" do
@@ -83,10 +109,10 @@ defmodule BuildPipeline.Run.PreviousRunResultTest do
       assert {:ok,
               %{
                 build_pipeline: [
-                  %{build_step_name: ^successful_build_step_name, skip: true},
-                  %{build_step_name: ^not_started_build_step_name, skip: false},
-                  %{build_step_name: ^failed_build_step_name, skip: false},
-                  %{build_step_name: ^skipped_build_step_name, skip: true}
+                  %{build_step_name: ^successful_build_step_name, status: :skip},
+                  %{build_step_name: ^not_started_build_step_name, status: :incomplete},
+                  %{build_step_name: ^failed_build_step_name, status: :incomplete},
+                  %{build_step_name: ^skipped_build_step_name, status: :skip}
                 ]
               }} = PreviousRunResult.parse_and_validate({previous_result_json, server_setup})
     end
@@ -151,12 +177,12 @@ defmodule BuildPipeline.Run.PreviousRunResultTest do
         PreviousRunResultBuilder.build()
         |> PreviousRunResultBuilder.with_build_step_name(build_step_name_1)
 
-      build_step =
+      build_step_2 =
         RunnersBuilder.build_incomplete()
         |> RunnersBuilder.with_build_step_name(build_step_name_2)
 
       server_setup =
-        ServerSetupBuilder.build() |> ServerSetupBuilder.with_build_pipeline([build_step])
+        ServerSetupBuilder.build() |> ServerSetupBuilder.with_build_pipeline([build_step_2])
 
       previous_result_json = Jason.encode!([previous_result])
 

@@ -21,7 +21,7 @@ defmodule BuildPipeline.Run.FinalResult.BuilderTest do
         |> RunnersBuilder.with_exit_code(0)
         |> RunnersBuilder.with_order(1)
         |> RunnersBuilder.with_build_step_name("hi_someone_else")
-        |> RunnersBuilder.with_skip(true)
+        |> RunnersBuilder.with_status_skip()
 
       runner_pid_3 = RunnersBuilder.pid()
 

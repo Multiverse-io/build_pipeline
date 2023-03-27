@@ -36,7 +36,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 0,
-                 skip: false
+                 status: :incomplete
                }
              ]
     end
@@ -64,7 +64,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 0,
-                 skip: false
+                 status: :incomplete
                },
                %{
                  build_step_name: "enoughFuel",
@@ -73,7 +73,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 1,
-                 skip: false
+                 status: :incomplete
                },
                %{
                  build_step_name: "carWorks",
@@ -82,7 +82,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new(["tiresNotSlashed", "enoughFuel"]),
                  command_type: :shell_command,
                  order: 2,
-                 skip: false
+                 status: :incomplete
                },
                %{
                  build_step_name: "driveToOffice",
@@ -91,7 +91,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new(["carWorks"]),
                  command_type: :shell_command,
                  order: 3,
-                 skip: false
+                 status: :incomplete
                },
                %{
                  build_step_name: "approachHuman",
@@ -100,7 +100,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new(["driveToOffice"]),
                  command_type: :shell_command,
                  order: 4,
-                 skip: false
+                 status: :incomplete
                },
                %{
                  build_step_name: "sayHello",
@@ -109,7 +109,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new(["approachHuman"]),
                  command_type: :shell_command,
                  order: 5,
-                 skip: false
+                 status: :incomplete
                }
              ]
     end
@@ -132,7 +132,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 0,
-                 skip: false
+                 status: :incomplete
                }
              ]
     end

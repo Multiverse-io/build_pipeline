@@ -4,9 +4,9 @@ defmodule BuildPipeline.Run.TerminalMessages do
   def pending(%{runners: runners, terminal_width: terminal_width}) do
     runners
     |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
-    |> Enum.map(fn {_pid, %{command: command, skip: skip}} ->
+    |> Enum.map(fn {_pid, %{command: command, status: status}} ->
       {ansi_prefix, suffix} =
-        if skip do
+        if status == :skip do
           {ANSI.green_background() <> ANSI.black(), "Skipped"}
         else
           {ANSI.light_magenta(), "Pending"}
@@ -126,9 +126,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
   def abort(%{mode: mode, runners: runners} = _server_state) do
     runners
-    |> Enum.reject(fn {_runner_pid, %{status: status, skip: skip}} ->
-      status == :complete || skip == true
-    end)
+    |> Enum.reject(fn {_runner_pid, %{status: status}} -> status in [:complete, :skip] end)
     |> Enum.map(fn {runner_pid, %{command: command}} ->
       abort_message(mode, command, runner_pid)
     end)

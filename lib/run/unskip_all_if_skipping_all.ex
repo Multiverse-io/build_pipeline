@@ -15,10 +15,10 @@ defmodule BuildPipeline.Run.UnskipAllIfSkippingAll do
   end
 
   defp entire_pipeline_to_be_skipped?(build_pipeline) do
-    Enum.all?(build_pipeline, fn step -> step.skip == true end)
+    Enum.all?(build_pipeline, fn %{status: status} -> status == :skip end)
   end
 
   defp unskip_all(build_pipeline) do
-    Enum.map(build_pipeline, fn step -> %{step | skip: false} end)
+    Enum.map(build_pipeline, fn step -> %{step | status: :incomplete} end)
   end
 end

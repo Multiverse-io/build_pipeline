@@ -48,7 +48,7 @@ defmodule BuildPipeline.Run.ConfigFile do
   ]
 
   defp build_build_step(json, order) do
-    initial_build_step = {:ok, %{order: order, skip: false}}
+    initial_build_step = {:ok, %{order: order, status: :incomplete}}
 
     @simple_steps
     |> Enum.reduce_while(initial_build_step, fn {step_key, json_key}, {:ok, build_step} ->
