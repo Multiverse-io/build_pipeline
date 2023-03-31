@@ -4,7 +4,7 @@ defmodule BuildPipeline.Run.Statistics do
 
   def print(state) do
     state.runners
-    |> Generator.dependency_tree_branches()
+    |> Generator.generate()
     |> Result.and_then(&Generator.prettify_output/1)
     |> case do
       {:ok, printable} -> IO.puts(printable)
