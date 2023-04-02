@@ -1,5 +1,7 @@
 defmodule BuildPipeline.Run.PreviousRunResultTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
+  # TODO find a better way then resorting to the below comment?
+  # async: false because Mimic.copy(File) doesn't seem to like calling it many times in async tests
   use Mimic
   alias BuildPipeline.Run.Builders.{RunnersBuilder, PreviousRunResultBuilder, ServerSetupBuilder}
   alias BuildPipeline.Run.{Const, PreviousRunResult}
