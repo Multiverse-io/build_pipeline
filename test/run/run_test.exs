@@ -323,14 +323,6 @@ defmodule BuildPipeline.RunTest do
       Application.put_env(:build_pipeline, :print_runner_output, true)
       EnvVarsSystemMock.setup()
 
-      # TODO delete the duplicate running here!
-      assert :ok ==
-               Run.main([
-                 "--cwd",
-                 "./example_projects/complex_yet_functioning",
-                 "--stats"
-               ])
-
       output =
         capture_io(fn ->
           assert :ok ==
@@ -341,29 +333,47 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      # assert output =~ "echo tires [Pending]"
-      # assert output =~ "echo tires [Running]"
-      # assert output =~ "echo tires [Succeeded in"
+      regexes = [
+        ~r|Branch 1 - [0-9]+ .s|,
+        ~r|├── echo tires \[[0-9]+ .s\]|,
+        ~r|├── echo car works \[[0-9]+ .s\]|,
+        ~r|├── echo drive \[[0-9]+ .s\]|,
+        ~r|├── echo walk over \[[0-9]+ .s\]|,
+        ~r|└── echo hello \[[0-9]+ .s\]|,
+        ~r|Branch 2 - [0-9]+ .s|
+      ]
 
-      # assert output =~ "echo fuel [Pending]"
-      # assert output =~ "echo fuel [Running]"
-      # assert output =~ "echo fuel [Succeeded in"
+      assert Enum.all?(regexes, fn regex -> Regex.match?(regex, output) end)
 
-      # assert output =~ "echo car works [Pending]"
-      # assert output =~ "echo car works [Running]"
-      # assert output =~ "echo car works [Succeeded in"
+      Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
 
-      # assert output =~ "echo walk over [Pending]"
-      # assert output =~ "echo walk over [Running]"
-      # assert output =~ "echo walk over [Succeeded in"
+    test "running without --stats puts no stats on the screen" do
+      original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
-      # assert output =~ "echo hello [Pending]"
-      # assert output =~ "echo hello [Running]"
-      # assert output =~ "echo hello [Succeeded in"
+      Application.put_env(:build_pipeline, :print_runner_output, true)
+      EnvVarsSystemMock.setup()
 
-      # regex = ~r|some output|
-      # assert Regex.match?(regex, output)
-      flunk("no")
+      output =
+        capture_io(fn ->
+          assert :ok ==
+                   Run.main([
+                     "--cwd",
+                     "./example_projects/complex_yet_functioning"
+                   ])
+        end)
+
+      regexes = [
+        ~r|Branch 1 - [0-9]+ .s|,
+        ~r|├── echo tires \[[0-9]+ .s\]|,
+        ~r|├── echo car works \[[0-9]+ .s\]|,
+        ~r|├── echo drive \[[0-9]+ .s\]|,
+        ~r|├── echo walk over \[[0-9]+ .s\]|,
+        ~r|└── echo hello \[[0-9]+ .s\]|,
+        ~r|Branch 2 - [0-9]+ .s|
+      ]
+
+      assert Enum.all?(regexes, fn regex -> Regex.match?(regex, output) == false end)
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end

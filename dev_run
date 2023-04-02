@@ -1,4 +1,0 @@
-#!/bin/bash
-
-MIX_ENV=dev mix escript.build
-./build_pipeline_dev "$@"

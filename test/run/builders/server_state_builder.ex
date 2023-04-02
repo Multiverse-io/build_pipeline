@@ -10,6 +10,7 @@ defmodule BuildPipeline.Run.Builders.ServerStateBuilder do
       terminal_width: 200,
       mode: :normal,
       save_result: false,
+      show_stats: false,
       cwd: "."
     }
   end
@@ -32,5 +33,9 @@ defmodule BuildPipeline.Run.Builders.ServerStateBuilder do
 
   def with_save_result(server_state, save_result) do
     update_in(server_state, [:save_result], fn _ -> save_result end)
+  end
+
+  def with_show_stats(server_state, show_stats) do
+    update_in(server_state, [:show_stats], fn _ -> show_stats end)
   end
 end

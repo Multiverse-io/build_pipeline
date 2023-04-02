@@ -29,7 +29,13 @@ defmodule BuildPipeline.Run.Server do
   def init({setup, parent_pid}) do
     %{
       build_pipeline: build_pipeline,
-      setup: %{mode: mode, cwd: cwd, terminal_width: terminal_width, save_result: save_result}
+      setup: %{
+        mode: mode,
+        cwd: cwd,
+        terminal_width: terminal_width,
+        save_result: save_result,
+        show_stats: show_stats
+      }
     } = setup
 
     runners = init_waiting_runners(build_pipeline, setup.setup)
@@ -40,7 +46,8 @@ defmodule BuildPipeline.Run.Server do
       terminal_width: terminal_width,
       mode: mode,
       cwd: cwd,
-      save_result: save_result
+      save_result: save_result,
+      show_stats: show_stats
     }
 
     state
@@ -153,6 +160,7 @@ defmodule BuildPipeline.Run.Server do
     end
   end
 
+  # TODO this is duplicated in generate. pull it out & test it
   defp all_runners_done?(state) do
     Enum.all?(state.runners, fn {_runner_pid, %{status: status}} ->
       status in [:skip, :complete]
