@@ -25,16 +25,16 @@ defmodule BuildPipeline.Run.Statistics.Branches do
         nest_if_not_nested_enough(acc)
 
       [child] ->
-        traverse_child(acc, child, deps)
+        append_descendants(acc, child, deps)
 
       _ ->
         children
-        |> Enum.map(fn child -> traverse_child(acc, child, deps) end)
+        |> Enum.map(fn child -> append_descendants(acc, child, deps) end)
         |> unnest_if_too_nested()
     end
   end
 
-  defp traverse_child(acc, child, deps) do
+  defp append_descendants(acc, child, deps) do
     child_nodes = traverse([child], child, deps)
     Enum.map(child_nodes, fn node -> acc ++ node end)
   end
