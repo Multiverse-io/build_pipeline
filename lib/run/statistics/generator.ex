@@ -1,16 +1,19 @@
 defmodule BuildPipeline.Run.Statistics.Generator do
+  alias BuildPipeline.Run.Statistics.Branches
+
   def generate(runners) do
     runner_map = runner_map(runners)
     roots = roots(runners)
-    deps = deps(runners, runner_map)
+
+    deps =
+      deps(runners, runner_map)
+      |> IO.inspect()
 
     branches =
-      roots
-      |> branches(deps)
-      # |> IO.inspect()
-      |> flatten_branches()
-      # |> IO.inspect()
-      |> List.flatten()
+      Branches.branches(roots, deps)
+      |> IO.inspect()
+
+    # |> List.flatten()
 
     # |> IO.inspect()
 
@@ -54,6 +57,20 @@ defmodule BuildPipeline.Run.Statistics.Generator do
     Map.new(runners, fn runner -> Map.pop!(runner, :build_step_name) end)
   end
 
+  defp roots(runners), do: roots([], runners)
+
+  defp roots(acc, []) do
+    acc
+  end
+
+  defp roots(acc, [runner | rest]) do
+    if MapSet.size(runner.depends_on) == 0 do
+      roots([runner.build_step_name | acc], rest)
+    else
+      roots(acc, rest)
+    end
+  end
+
   defp deps(runners, runner_map), do: deps(%{}, runners, runner_map)
 
   defp deps(deps, [], _runner_map) do
@@ -70,55 +87,4 @@ defmodule BuildPipeline.Run.Statistics.Generator do
     end)
     |> deps(rest, runner_map)
   end
-
-  defp roots(runners), do: roots([], runners)
-
-  defp roots(acc, []) do
-    acc
-  end
-
-  defp roots(acc, [runner | rest]) do
-    if MapSet.size(runner.depends_on) == 0 do
-      roots([runner.build_step_name | acc], rest)
-    else
-      roots(acc, rest)
-    end
-  end
-
-  defp branches(roots, deps) do
-    Enum.flat_map(roots, fn root -> get_branches(root, deps) end)
-  end
-
-  defp get_branches(node, deps) do
-    nodes_deps = deps[node]
-
-    rest_of_branch =
-      if nodes_deps do
-        Enum.flat_map(nodes_deps, fn next_node -> get_branches(next_node, deps) end)
-      else
-        []
-      end
-
-    [{node, rest_of_branch}]
-  end
-
-  defp flatten_branches(branches) do
-    flatten_branches(branches, [[]], [])
-  end
-
-  defp flatten_branches([{step, children} | branches], inner, outer) do
-    inner =
-      Enum.map(inner, fn acc -> [step | acc] end)
-      |> IO.inspect(label: "x")
-
-        case Enum.map(children, fn child -> flatten_branches([child], inner, outer) end) do
-          [] -> inner
-          result -> result
-        end
-    #|> IO.inspect(label: "y")
-  end
-
-  # defp flatten_branches(branches) do
-  #  Enum.map(branches, fn {step, branch} -> [step, flatten_branches(branch)] end)
-  # end
 end
