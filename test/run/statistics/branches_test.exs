@@ -3,8 +3,9 @@ defmodule BuildPipeline.Run.Statistics.BranchesTest do
   alias BuildPipeline.Run.Statistics.Branches
 
   describe "branches/2" do
-    test "simple no-nesting cases" do
+    test "simple no-branching, no-chaining cases" do
       assert Branches.branches([], %{}) == []
+      assert Branches.branches([], %{"a" => []}) == []
       assert Branches.branches(["a"], %{"a" => []}) == [["a"]]
       assert Branches.branches(["a", "b"], %{"a" => [], "b" => []}) == [["a"], ["b"]]
 
@@ -180,7 +181,7 @@ defmodule BuildPipeline.Run.Statistics.BranchesTest do
              ]
     end
 
-    test "combo" do
+    test "gnarly chaining & multi-branching combos" do
       assert Branches.branches(["a"], %{
                "a" => ["b"],
                "b" => ["c", "d"],
@@ -230,6 +231,17 @@ defmodule BuildPipeline.Run.Statistics.BranchesTest do
                ["b", "e", "j", "p"],
                ["c"]
              ]
+    end
+
+    test "any dependency maps missing nodes will raise" do
+      bad_combos = [
+        {["a"], %{}},
+        {["a"], %{"a" => ["b"]}}
+      ]
+
+      Enum.each(bad_combos, fn {roots, deps} ->
+        assert_raise KeyError, fn -> Branches.branches(roots, deps) end
+      end)
     end
   end
 end
