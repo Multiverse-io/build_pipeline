@@ -92,12 +92,19 @@ defmodule BuildPipeline.Run.Server do
       |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
       |> Enum.map(fn {_, build_step} -> build_step end)
 
-    failed? = Enum.any?(build_pipeline, fn build_step -> build_step.status == :incomplete end)
+    success? =
+      Enum.all?(build_pipeline, fn build_step ->
+        case build_step do
+          %{status: :skip} -> true
+          %{exit_code: exit_code} -> exit_code == 0
+          _ -> false
+        end
+      end)
 
-    if failed? do
-      %{build_pipeline: build_pipeline, result: :failure}
-    else
+    if success? do
       %{build_pipeline: build_pipeline, result: :success}
+    else
+      %{build_pipeline: build_pipeline, result: :failure}
     end
   end
 

@@ -135,7 +135,7 @@ defmodule BuildPipeline.Init do
       {
         "buildStepName": "drive car",
         "commandType": "shellCommand",
-        "command": "echo I'm driving OK!",
+        "command": "echo I am driving OK!",
         "dependsOn": [
           "check tires", "check enough fuel"
         ]

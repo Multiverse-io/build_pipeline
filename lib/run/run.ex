@@ -37,8 +37,16 @@ defmodule BuildPipeline.Run do
     {:ok, supervisor_pid} = Supervisor.start_link(children, strategy: :one_for_one)
 
     receive do
-      {:server_done, _result} ->
+      {:server_done, result} ->
+        if should_print_runner_output?() do
+          result |> finished_message() |> IO.puts()
+        end
+
         Supervisor.stop(supervisor_pid)
+
+        unless Application.get_env(:build_pipeline, :env) == :test do
+          result |> exit_code() |> System.halt()
+        end
     end
   end
 
@@ -80,5 +88,20 @@ defmodule BuildPipeline.Run do
     end
 
     :error
+  end
+
+  defp exit_code(%{result: :success}), do: 0
+  defp exit_code(%{result: _}), do: 1
+
+  defp finished_message(%{result: :success}) do
+    "#{IO.ANSI.green()}\n************************\nBuild Pipeline - Success\n************************#{IO.ANSI.reset()}"
+  end
+
+  defp finished_message(%{result: _}) do
+    "#{IO.ANSI.red()}\n************************\nBuild Pipeline - Failure\n************************#{IO.ANSI.reset()}"
+  end
+
+  defp should_print_runner_output? do
+    Application.get_env(:build_pipeline, :print_runner_output, true)
   end
 end

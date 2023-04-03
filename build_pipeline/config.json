@@ -60,5 +60,13 @@
     "dependsOn": [
       "escriptBuild"
     ]
+  },
+  {
+    "buildStepName": "exit_code_correctness_end_to_end_test",
+    "commandType": "script",
+    "command": "exit_code_correctness_end_to_end_test",
+    "dependsOn": [
+      "escriptBuild"
+    ]
   }
 ]
