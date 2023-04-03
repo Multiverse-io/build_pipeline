@@ -14,7 +14,6 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   @run_all "--ra"
   @stats "--stats"
   # keep usage_instructions in sync with the README.md file
-  # TODO write a proper section in the readme about showing stats - have an example output?
   @usage_instructions """
   usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra] [--stats]
 

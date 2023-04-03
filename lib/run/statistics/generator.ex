@@ -1,4 +1,5 @@
 defmodule BuildPipeline.Run.Statistics.Generator do
+  alias BuildPipeline.Run.Complete
   alias BuildPipeline.Run.Statistics.Branches
 
   def generate(_runners, _show_stats? = false) do
@@ -6,7 +7,7 @@ defmodule BuildPipeline.Run.Statistics.Generator do
   end
 
   def generate(runners, _show_stats? = true) do
-    if all_runners_completed?(runners) do
+    if Complete.complete?(runners) do
       runners = Enum.map(runners, fn {_pid, runner} -> runner end)
       runner_map = runner_map(runners)
       roots = roots(runners)
@@ -16,50 +17,6 @@ defmodule BuildPipeline.Run.Statistics.Generator do
     else
       {:error, :run_failed}
     end
-  end
-
-  # TODO pull this out into a separate module (& test it?)
-  def prettify_output(branches) do
-    output =
-      branches
-      |> Enum.with_index(1)
-      |> Enum.map(fn {branch, index} ->
-        """
-        Branch #{index} - #{duration_message(branch.duration_in_microseconds)}
-        #{branch_steps_output(branch.steps)}
-
-        """
-      end)
-      |> Enum.join()
-
-    footer = "******************"
-
-    header = """
-
-    #{footer}
-    *** Statistics ***
-    #{footer}
-
-    """
-
-    {:ok, header <> output <> footer}
-  end
-
-  defp branch_steps_output(steps) do
-    [%{command: last} | _] = Enum.reverse(steps)
-
-    steps
-    |> Enum.map(fn %{command: command, duration_in_microseconds: duration_in_microseconds} ->
-      prefix = if command == last, do: "└", else: "├"
-      "#{prefix}── #{command} [#{duration_message(duration_in_microseconds)}]"
-    end)
-    |> Enum.join("\n")
-  end
-
-  defp all_runners_completed?(runners) do
-    Enum.all?(runners, fn {_runner_pid, %{status: status}} ->
-      status in [:skip, :complete]
-    end)
   end
 
   defp stats_for_branches(branches, runner_map) do
@@ -128,21 +85,5 @@ defmodule BuildPipeline.Run.Statistics.Generator do
       Map.update(acc, dependant, [step], &[step | &1])
     end)
     |> deps(rest, runner_map)
-  end
-
-  defp duration_message(duration_in_microseconds) do
-    cond do
-      duration_in_microseconds < 1000 ->
-        "#{duration_in_microseconds} μs"
-
-      duration_in_microseconds < 1_000_000 ->
-        "#{round(duration_in_microseconds / 1000)} ms"
-
-      duration_in_microseconds < 60_000_000 ->
-        "#{Float.round(duration_in_microseconds / 1_000_000, 1)} s"
-
-      true ->
-        "#{Float.round(duration_in_microseconds / 60_000_000, 1)} min"
-    end
   end
 end

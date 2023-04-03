@@ -1,11 +1,11 @@
 defmodule BuildPipeline.Run.Statistics do
   alias BuildPipeline.Run.Result
-  alias BuildPipeline.Run.Statistics.Generator
+  alias BuildPipeline.Run.Statistics.{Generator, PrettyOutput}
 
   def print(state) do
     state.runners
     |> Generator.generate(state.show_stats)
-    |> Result.and_then(&Generator.prettify_output/1)
+    |> Result.and_then(&PrettyOutput.generate/1)
     |> case do
       {:ok, msg} -> puts(msg)
       error -> error

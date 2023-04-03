@@ -140,7 +140,55 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 
 `--ra`       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
 
-`--stats`    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
+`--stats`    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. See below for more info. Cannot be set with --debug
+
+### Statistics
+If requested via the `--stats` flag, statistics from the run will be put on the screen at the expense of a small amount of extra time being spent at the end.
+
+Imagine build steps such that
+A ── B ── C ── D ── E ── F
+          └─── H ── I ── J
+
+In other words:
+
+- A depends on [] (nothing)
+- B depends on ["A"]
+- C depends on ["B"]
+- D depends on ["C"]
+- E depends on ["D"]
+- F depends on ["E"]
+- H depends on ["C"]
+- I depends on ["H"]
+- J depends on ["I"]
+
+This can be viewed as having two "branches" of execution with a "branch point" at step "C".
+
+The if passing `--stats` with this setup then we'd return statistcs as shown below.
+We know that steps [D, E, F] and [H, I, J] will run in parallel, and that each branch waits for [A, B, C] to be complete before it can start.
+
+The slowest branches are shown first, and every branch begins at a "root" - a build step with no dependencies, which is "A" in both our branches in this example. The branch shown at the top of the output will always be the critical path to building our pipeline - the slowest limiting factor, and should be the first place to look if trying to speed things up.
+
+******************
+*** Statistics ***
+******************
+
+Branch 1 - 455 ms
+├── A [1 ms]
+├── B [2 ms]
+├── C [4 ms]
+├── H [64 ms]
+├── I [128 ms]
+└── J [256 ms]
+
+Branch 2 - 63 ms
+├── A [1 ms]
+├── B [2 ms]
+├── C [4 ms]
+├── D [8 ms]
+├── E [16 ms]
+└── F [32 ms]
+
+******************
 
 ### Enviroment Variables
 Some `./bp run` options be set by enviroment variables.

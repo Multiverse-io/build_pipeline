@@ -3,6 +3,7 @@ defmodule BuildPipeline.Run.Server do
 
   alias BuildPipeline.Run.{
     BuildStepRunner,
+    Complete,
     PreviousRunResultFileWriter,
     Statistics,
     TerminalPrinter,
@@ -160,12 +161,7 @@ defmodule BuildPipeline.Run.Server do
     end
   end
 
-  # TODO this is duplicated in generate. pull it out & test it
-  defp all_runners_done?(state) do
-    Enum.all?(state.runners, fn {_runner_pid, %{status: status}} ->
-      status in [:skip, :complete]
-    end)
-  end
+  defp all_runners_done?(state), do: Complete.complete?(state.runners)
 
   defp start_runners_if_able(state) do
     runner_pids = WhichBuildStepsCanRun.determine(state)

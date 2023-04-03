@@ -56,7 +56,7 @@ defmodule BuildPipeline.MixProject do
     [
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:jason, "~> 1.2"},
-      {:mimic, "~> 1.7", only: :test},
+      {:mimic, "~> 1.7.4", only: :test},
       {:faker, "~> 0.17", only: :test}
     ]
   end
