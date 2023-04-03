@@ -44,7 +44,9 @@ defmodule BuildPipeline.Run do
 
         Supervisor.stop(supervisor_pid)
 
-        unless Application.get_env(:build_pipeline, :env) == :test do
+        if Application.get_env(:build_pipeline, :env) == :test do
+          :ok
+        else
           result |> exit_code() |> System.halt()
         end
     end
