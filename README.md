@@ -146,8 +146,10 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 If requested via the `--stats` flag, statistics from the run will be put on the screen at the expense of a small amount of extra time being spent at the end.
 
 Imagine build steps such that
+```
 A ── B ── C ── D ── E ── F
           └─── H ── I ── J
+```
 
 In other words:
 
@@ -168,6 +170,7 @@ We know that steps [D, E, F] and [H, I, J] will run in parallel, and that each b
 
 The slowest branches are shown first, and every branch begins at a "root" - a build step with no dependencies, which is "A" in both our branches in this example. The branch shown at the top of the output will always be the critical path to building our pipeline - the slowest limiting factor, and should be the first place to look if trying to speed things up.
 
+ ```
 ******************
 *** Statistics ***
 ******************
@@ -189,6 +192,7 @@ Branch 2 - 63 ms
 └── F [32 ms]
 
 ******************
+```
 
 ### Enviroment Variables
 Some `./bp run` options be set by enviroment variables.
