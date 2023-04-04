@@ -1,0 +1,65 @@
+version: 2.1
+
+orbs:
+  gh: circleci/github-cli@2.1.0
+  slack: circleci/slack@4.5.1
+
+parameters:
+   cache-key:
+     type: string
+     default: v2
+
+commands:
+  slack_notify_failure:
+    steps:
+      - slack/notify:
+          branch_pattern: master
+          event: fail
+          channel: 'squids-alerts'
+          custom: |-
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*:fire: ${CIRCLE_USERNAME} broke the Build Pipeline ${CIRCLE_JOB} job :fire:*\n\n${GIT_COMMIT_MSG}"
+                  },
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://tenor.com/view/mochi-mochi-peach-cat-cat-kitty-animated-cry-gif-17774448",
+                    "alt_text": "images"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Job"
+                      },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+jobs:
+  build_and_test:
+    docker:
+      - image: ghcr.io/multiverse-io/elixir-ci:1.14.2-erlang-25.1.2-alpine-3.16.2
+    steps:
+      - checkout
+      - run: ./build --verbose
+      - slack_notify_failure
+
+workflows:
+  version: 2.4
+  build:
+    jobs:
+      - build_and_test:
+          context:
+            - slack
