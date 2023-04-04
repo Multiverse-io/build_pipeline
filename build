@@ -1,3 +1,2 @@
 #!/bin/bash
-#mix build_pipeline.run $@
 ./bp run $@
