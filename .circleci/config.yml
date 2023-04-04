@@ -73,9 +73,9 @@ jobs:
           at: .
       - run: "ls -lah"
       - run: "echo $GITHUB_TOKEN"
+      - run: "gh auth status"
       - gh/setup:
           version: 2.14.2
-          GH_TOKEN: "$GITHUB_TOKEN"
       - run: gh release create --draft --generate-notes "$CIRCLE_TAG" './bp'
 
 workflows:
