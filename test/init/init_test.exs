@@ -27,7 +27,9 @@ defmodule BuildPipeline.InitTest do
 
       assert ["build_pipeline"] == File.ls!(cwd)
 
-      assert ["config.json", "scripts"] == File.ls!(build_pipeline_dir)
+      assert MapSet.new(["config.json", "scripts"]) ==
+               build_pipeline_dir |> File.ls!() |> MapSet.new()
+
       assert [] == File.ls!(scripts_dir)
     end
 
