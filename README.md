@@ -13,16 +13,20 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 - `erlang 25` https://www.erlang.org/
 - `tput` must be runnable on your system. This is used to work out the width of your terminal to enable fancy command line output
 
+## Creating releases
+
+1. Checkout the lastest main branch on your machine
+2. Update the `version` function in `lib/build_pipeline.ex` to return `1.2.3` (without a preceeding v!)
+3. Create a git tag with the new version number `git tag v1.2.3`
+4. Push the tag `git push origin v1.2.3`
+5. Wait for CircleCI to create a draft release
+6. Review the draft release and publish
+
 ### Installation
 
-- wget https://raw.githubusercontent.com/mbernerslee/build_pipeline/master/bp
-- chmod +x bp
-
-OR
-
-- git clone this project
-- [additionally have elixir installed]
-- copy (or better would be to symlink) ./bp to the directory of your choice
+- browse to https://github.com/Multiverse-io/build_pipeline/releases/latest
+- use the link to download `bp`
+- copy or symlink `bp` to the root of your project
 
 Then, From the root of your projects' directory run:
 ```
