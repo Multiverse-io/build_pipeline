@@ -3,8 +3,10 @@ defmodule BuildPipeline do
 
   @run "run"
   @init "init"
+  @version "--version"
   @help """
   I only accept arguments of
+    - --version
     - run [run args]
     - init [run args]
 
@@ -22,7 +24,13 @@ defmodule BuildPipeline do
     Init.main(init_args)
   end
 
+  def main([@version]) do
+    IO.puts(version())
+  end
+
   def main(_) do
     IO.puts(@help)
   end
+
+  def version, do: "0.0.8"
 end

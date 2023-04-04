@@ -43,6 +43,7 @@ defmodule BuildPipelineTest do
 
       assert output =~ """
              I only accept arguments of
+               - --version
                - run [run args]
                - init [run args]
 
@@ -51,6 +52,11 @@ defmodule BuildPipelineTest do
                - run help
                - init help
              """
+    end
+
+    test "given --version, returns the version" do
+      output = capture_io(fn -> assert :ok == BuildPipeline.main(["--version"]) end)
+      assert output =~ BuildPipeline.version()
     end
   end
 end
