@@ -5,9 +5,9 @@ orbs:
   slack: circleci/slack@4.5.1
 
 parameters:
-   cache-key:
-     type: string
-     default: v2
+  cache-key:
+    type: string
+    default: v2
 
 commands:
   slack_notify_failure:
@@ -15,7 +15,7 @@ commands:
       - slack/notify:
           branch_pattern: master
           event: fail
-          channel: 'squids-alerts'
+          channel: "squids-alerts"
           custom: |-
             {
               "blocks": [
@@ -75,8 +75,9 @@ jobs:
       - run: "echo $GITHUB_TOKEN"
       - gh/setup:
           version: 2.14.2
+      - env:
+        GH_TOKEN: $GITHUB_TOKEN
       - run: gh release create --draft --generate-notes "$CIRCLE_TAG" './bp'
-
 
 workflows:
   version: 2.4
