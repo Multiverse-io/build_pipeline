@@ -68,5 +68,13 @@
     "dependsOn": [
       "escriptBuild"
     ]
+  },
+  {
+    "buildStepName": "preflight_checks_return_non_zero_exit_code_test",
+    "commandType": "script",
+    "command": "preflight_checks_return_non_zero_exit_code_test",
+    "dependsOn": [
+      "escriptBuild"
+    ]
   }
 ]
