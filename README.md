@@ -10,7 +10,7 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 ## Installation and Getting Up and Running
 
 ### Dependencies
-- `erlang` https://www.erlang.org/
+- `erlang 25` https://www.erlang.org/
 - `tput` must be runnable on your system. This is used to work out the width of your terminal to enable fancy command line output
 
 ### Installation
