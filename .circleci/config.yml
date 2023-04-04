@@ -58,6 +58,22 @@ jobs:
           environment:
             TERM: xterm-256color
       - slack_notify_failure
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bp
+
+  create_release:
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - gh/setup:
+          version: 2.14.2
+      - run: gh release create --draft --generate-notes "$CIRCLE_TAG" './bp'
+
 
 workflows:
   version: 2.4
@@ -66,3 +82,22 @@ workflows:
       - build_and_test:
           context:
             - slack
+  release:
+    jobs:
+      - build_and_test:
+          context:
+            - slack
+          filters: &filters-release
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+
+      - create_release:
+          context:
+            - slack
+            - github-deployer
+          requires:
+            - build_and_test
+          filters:
+            <<: *filters-release
