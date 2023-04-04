@@ -74,7 +74,7 @@ jobs:
       - run: "ls -lah"
       - gh/setup:
           version: 2.14.2
-      - run: "gh auth login --with-token"
+      - run: "gh auth login"
       - run: gh release create --draft --generate-notes "$CIRCLE_TAG" './bp'
 
 workflows:
@@ -98,7 +98,6 @@ workflows:
       - create_release:
           context:
             - slack
-            - github-deployer
           requires:
             - build_and_test
           filters:
