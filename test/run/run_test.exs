@@ -333,6 +333,8 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
+      IO.inspect(output)
+
       regexes = [
         ~r|Branch 1 - [0-9]+ .s|,
         ~r|├── echo tires \[[0-9]+ .s\]|,
