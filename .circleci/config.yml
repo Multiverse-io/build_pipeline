@@ -84,7 +84,7 @@ workflows:
             - slack
   release:
     jobs:
-      - test:
+      - build_and_test:
           context:
             - slack
           filters: &filters-release
