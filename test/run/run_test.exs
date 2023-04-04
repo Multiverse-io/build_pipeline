@@ -333,8 +333,7 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      IO.inspect(output)
-      raise "no"
+      IO.inspect(output, label: "THE OUTPUT IS")
 
       regexes = [
         ~r|Branch 1 - [0-9]+ .s|,
