@@ -43,12 +43,7 @@ defmodule BuildPipeline.Run do
         end
 
         Supervisor.stop(supervisor_pid)
-
-        if Application.get_env(:build_pipeline, :env) == :test do
-          :ok
-        else
-          result |> exit_code() |> System.halt()
-        end
+        result |> exit_code_from_result() |> exit_with_code()
     end
   end
 
@@ -89,11 +84,20 @@ defmodule BuildPipeline.Run do
         IO.puts("I failed to startup with an error of\n#{inspect(other)}")
     end
 
+    exit_with_code(1)
     :error
   end
 
-  defp exit_code(%{result: :success}), do: 0
-  defp exit_code(%{result: _}), do: 1
+  defp exit_with_code(exit_code) do
+    if Application.get_env(:build_pipeline, :env) == :test do
+      :ok
+    else
+      System.halt(exit_code)
+    end
+  end
+
+  defp exit_code_from_result(%{result: :success}), do: 0
+  defp exit_code_from_result(%{result: _}), do: 1
 
   defp finished_message(%{result: :success}) do
     "#{IO.ANSI.green()}\n************************\nBuild Pipeline - Success\n************************#{IO.ANSI.reset()}"

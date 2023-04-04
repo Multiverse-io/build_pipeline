@@ -1,0 +1,11 @@
+#!/bin/bash
+
+output=$(./bp run --cwd example_projects/bad_config)
+test_exit_code=$?
+
+if [ $test_exit_code -eq 1 ]; then
+  exit 0
+else
+  echo "I should have got exit_code = 1 but instead I got $test_exit_code"
+  exit 1
+fi
