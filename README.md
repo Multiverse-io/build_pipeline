@@ -16,7 +16,7 @@ If commands don't depend on anything, or if all of their dependent `command`s ha
 ## Creating releases
 
 1. Checkout the lastest main branch on your machine
-2. Update the `version` function in `lib/build_pipeline.ex` to return `v1.2.3`
+2. Update the `version` function in `lib/build_pipeline.ex` to return `1.2.3` (without a preceeding v!)
 3. Create a git tag with the new version number `git tag v1.2.3`
 4. Push the tag `git push origin v1.2.3`
 5. Wait for CircleCI to create a draft release
