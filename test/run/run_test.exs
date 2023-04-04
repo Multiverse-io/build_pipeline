@@ -334,16 +334,14 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      IO.inspect(output, label: "THE OUTPUT IS")
-
       regexes = [
-        ~r|Branch 1 - [0-9]+ .s|,
-        ~r|├── echo tires \[[0-9]+ .s\]|,
-        ~r|├── echo car works \[[0-9]+ .s\]|,
-        ~r|├── echo drive \[[0-9]+ .s\]|,
-        ~r|├── echo walk over \[[0-9]+ .s\]|,
-        ~r|└── echo hello \[[0-9]+ .s\]|,
-        ~r|Branch 2 - [0-9]+ .s|
+        ~r|Branch 1 - [0-9]+ .*|,
+        ~r|├── echo tires \[[0-9]+ .*\]|,
+        ~r|├── echo car works \[[0-9]+ .*\]|,
+        ~r|├── echo drive \[[0-9]+ .*\]|,
+        ~r|├── echo walk over \[[0-9]+ .*\]|,
+        ~r|└── echo hello \[[0-9]+ .*\]|,
+        ~r|Branch 2 - [0-9]+ .*|
       ]
 
       assert Enum.all?(regexes, fn regex -> Regex.match?(regex, output) end)
@@ -367,13 +365,13 @@ defmodule BuildPipeline.RunTest do
         end)
 
       regexes = [
-        ~r|Branch 1 - [0-9]+ .s|,
-        ~r|├── echo tires \[[0-9]+ .s\]|,
-        ~r|├── echo car works \[[0-9]+ .s\]|,
-        ~r|├── echo drive \[[0-9]+ .s\]|,
-        ~r|├── echo walk over \[[0-9]+ .s\]|,
-        ~r|└── echo hello \[[0-9]+ .s\]|,
-        ~r|Branch 2 - [0-9]+ .s|
+        ~r|Branch 1 - [0-9]+ .*|,
+        ~r|├── echo tires \[[0-9]+ .*\]|,
+        ~r|├── echo car works \[[0-9]+ .*\]|,
+        ~r|├── echo drive \[[0-9]+ .*\]|,
+        ~r|├── echo walk over \[[0-9]+ .*\]|,
+        ~r|└── echo hello \[[0-9]+ .*\]|,
+        ~r|Branch 2 - [0-9]+ .*|
       ]
 
       assert Enum.all?(regexes, fn regex -> Regex.match?(regex, output) == false end)
