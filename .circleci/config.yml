@@ -74,7 +74,7 @@ jobs:
       - run: "ls -lah"
       - gh/setup:
           version: 2.14.2
-      - run: "echo $GITHUB_TOKEN | gh auth login --with-token"
+      - run: "gh auth login --with-token"
       - run: gh release create --draft --generate-notes "$CIRCLE_TAG" './bp'
 
 workflows:
