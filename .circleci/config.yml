@@ -75,7 +75,6 @@ jobs:
       - run: "echo $GITHUB_TOKEN"
       - gh/setup:
           version: 2.14.2
-      - env:
           GH_TOKEN: "$GITHUB_TOKEN"
       - run: gh release create --draft --generate-notes "$CIRCLE_TAG" './bp'
 
