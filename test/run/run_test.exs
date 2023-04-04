@@ -329,8 +329,7 @@ defmodule BuildPipeline.RunTest do
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning",
-                     "--stats",
-                     "--verbose"
+                     "--stats"
                    ])
         end)
 
