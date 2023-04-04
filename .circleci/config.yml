@@ -66,8 +66,8 @@ jobs:
   create_release:
     machine:
       image: ubuntu-2204:current
-    environment:
     steps:
+      - checkout
       - attach_workspace:
           at: .
       - gh/setup:
