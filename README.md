@@ -109,6 +109,12 @@ Saying that A `dependsOn` [B, C] is redundant. Just define A with `dependsOn` = 
 Once your `config.json` and any supporting scripts in `scripts` are in place, you're good to go, and you can run
 
 ```
+bp run
+```
+
+If installed via asdf, or
+
+```
 ./bp run
 ```
 
