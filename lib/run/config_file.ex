@@ -62,6 +62,7 @@ defmodule BuildPipeline.Run.ConfigFile do
     end)
     |> Result.and_then(fn build_step -> add_command_env_vars(build_step, json) end)
     |> Result.and_then(fn build_step -> add_depends_on(build_step, json) end)
+    |> Result.and_then(fn build_step -> add_conditionally_depends_on(build_step, json) end)
   end
 
   defp add_command_env_vars(build_step, json) do
@@ -91,6 +92,37 @@ defmodule BuildPipeline.Run.ConfigFile do
       depends_on ->
         {:error,
          "I failed to parse the build_pipeline_config because a build step had a non-list dependsOn of '#{depends_on}'"}
+    end
+  end
+
+  defp add_conditionally_depends_on(build_step, json) do
+    json
+    |> Map.get("conditionallyDependsOn")
+    |> case do
+      nil ->
+        {:ok, Map.put(build_step, :conditionally_depends_on, MapSet.new([]))}
+
+      conditionally_depends_on when is_list(conditionally_depends_on) ->
+        conditionally_depends_on
+        |> Enum.reduce_while({:ok, MapSet.new([])}, fn dependant, {:ok, acc} ->
+          case dependant do
+            %{"buildStepName" => build_step_name, "outputting" => outputting} ->
+              {:cont,
+               {:ok, MapSet.put(acc, %{build_step_name: build_step_name, outputting: outputting})}}
+
+            _ ->
+              {:halt,
+               {:error,
+                ~s|I failed to parse the build_pipeline_config because buildStepName '#{build_step.build_step_name}' has a conditionallyDependsOn in an invalid format. It must be a list of {"buildStepName": "some name", "outputting": "some output"}|}}
+          end
+        end)
+        |> Result.and_then(fn conditionally_depends_on ->
+          {:ok, Map.put(build_step, :conditionally_depends_on, conditionally_depends_on)}
+        end)
+
+      conditionally_depends_on ->
+        {:error,
+         ~s|I failed to parse the build_pipeline_config because buildStepName '#{build_step.build_step_name}' has a conditionallyDependsOn in an invalid format. It must be a list of {"buildStepName": "some name", "outputting": "some output"}|}
     end
   end
 

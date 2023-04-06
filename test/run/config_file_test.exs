@@ -34,6 +34,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "echo 'hello'",
                  command_env_vars: [],
                  depends_on: MapSet.new([]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 0,
                  status: :incomplete
@@ -62,6 +63,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "echo 'tires'",
                  command_env_vars: [],
                  depends_on: MapSet.new([]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 0,
                  status: :incomplete
@@ -71,6 +73,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "echo 'fuel'",
                  command_env_vars: [],
                  depends_on: MapSet.new([]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 1,
                  status: :incomplete
@@ -80,6 +83,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "echo 'car works'",
                  command_env_vars: [],
                  depends_on: MapSet.new(["tiresNotSlashed", "enoughFuel"]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 2,
                  status: :incomplete
@@ -89,6 +93,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "echo 'drive'",
                  command_env_vars: [],
                  depends_on: MapSet.new(["carWorks"]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 3,
                  status: :incomplete
@@ -98,6 +103,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "echo 'walk over'",
                  command_env_vars: [],
                  depends_on: MapSet.new(["driveToOffice"]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 4,
                  status: :incomplete
@@ -107,6 +113,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "echo 'hello'",
                  command_env_vars: [],
                  depends_on: MapSet.new(["approachHuman"]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 5,
                  status: :incomplete
@@ -130,6 +137,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                  command: "mix compile",
                  command_env_vars: [{'MIX_ENV', 'test'}],
                  depends_on: MapSet.new([]),
+                 conditionally_depends_on: MapSet.new([]),
                  command_type: :shell_command,
                  order: 0,
                  status: :incomplete
@@ -238,6 +246,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
     end
   end
 
+  # TODO add no circular conditionallyDependsOn tests too!
   describe "no circular dependsOn references" do
     test "simplest failure case" do
       json = """
@@ -373,6 +382,74 @@ defmodule BuildPipeline.Run.ConfigFileTest do
       assert {:error,
               {:invalid_config,
                "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+  end
+
+  describe "parse_and_validate/1 - when steps conditionallyDependsOn other steps" do
+    # TODO add a more complicated case than the below, e.g. have two conditionallyDependsOn that depend on 2 or 3 things each
+    # TODO update the builders to have conditionally_depends_on in them with empty set by default
+    test "simple case" do
+      json = """
+      [
+        {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": []},
+        {"buildStepName": "enoughFuel", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": [], "conditionallyDependsOn": [{"buildStepName": "tiresNotSlashed", "outputting": "tires"}]}
+      ]
+      """
+
+      assert {:ok, %{build_pipeline: build_pipeline}} =
+               ConfigFile.parse_and_validate({json, @setup})
+
+      assert build_pipeline == [
+               %{
+                 build_step_name: "tiresNotSlashed",
+                 command: "echo 'tires'",
+                 command_env_vars: [],
+                 depends_on: MapSet.new([]),
+                 conditionally_depends_on: MapSet.new([]),
+                 command_type: :shell_command,
+                 order: 0,
+                 status: :incomplete
+               },
+               %{
+                 build_step_name: "enoughFuel",
+                 command: "echo 'fuel'",
+                 command_env_vars: [],
+                 depends_on: MapSet.new([]),
+                 conditionally_depends_on:
+                   MapSet.new([%{build_step_name: "tiresNotSlashed", outputting: "tires"}]),
+                 command_type: :shell_command,
+                 order: 1,
+                 status: :incomplete
+               }
+             ]
+    end
+
+    test "given malformed conditionallyDependsOn - when it's not even a list, returns error" do
+      json = """
+      [
+        {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": []},
+        {"buildStepName": "enoughFuel", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": [], "conditionallyDependsOn": {"non": "sense"}}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               ~s|I failed to parse the build_pipeline_config because buildStepName 'enoughFuel' has a conditionallyDependsOn in an invalid format. It must be a list of {"buildStepName": "some name", "outputting": "some output"}|}} ==
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "given malformed conditionallyDependsOn - when it's a list with items in the wrong format, returns error" do
+      json = """
+      [
+        {"buildStepName": "tiresNotSlashed", "commandType": "shellCommand", "command": "echo 'tires'", "dependsOn": []},
+        {"buildStepName": "enoughFuel", "commandType": "shellCommand", "command": "echo 'fuel'", "dependsOn": [], "conditionallyDependsOn": [{"buildStepName": "tiresNotSlashed", "outputting": "tires"}, {"non": "sense"}]}
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               ~s|I failed to parse the build_pipeline_config because buildStepName 'enoughFuel' has a conditionallyDependsOn in an invalid format. It must be a list of {"buildStepName": "some name", "outputting": "some output"}|}} ==
                ConfigFile.parse_and_validate({json, @setup})
     end
   end

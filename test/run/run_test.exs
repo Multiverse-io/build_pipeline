@@ -377,5 +377,27 @@ defmodule BuildPipeline.RunTest do
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
+
+    test "when a step should NOT run conditionally based on the output of another command, it is not run!" do
+      original_env = Application.get_env(:build_pipeline, :print_runner_output)
+
+      Application.put_env(:build_pipeline, :print_runner_output, true)
+      EnvVarsSystemMock.setup()
+
+      output =
+        capture_io(fn ->
+          assert :ok ==
+                   Run.main([
+                     "--cwd",
+                     "./example_projects/conditionally_dont_run_a_step_1"
+                   ])
+        end)
+
+      assert output =~ "echo I am driving OK! [Pending]"
+      refute output =~ "echo I am driving OK! [Running]"
+      assert output =~ "echo I am driving OK! [Skipped]"
+
+      Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
   end
 end

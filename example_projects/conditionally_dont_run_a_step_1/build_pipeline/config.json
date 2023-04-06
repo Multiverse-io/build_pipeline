@@ -1,0 +1,40 @@
+[
+  {
+    "buildStepName": "check tires",
+    "commandType": "shellCommand",
+    "command": "echo tires OK!",
+    "dependsOn": []
+  },
+  {
+    "buildStepName": "check enough fuel",
+    "commandType": "shellCommand",
+    "command": "echo fuel OK!",
+    "dependsOn": [],
+    "envVars": [
+      {
+        "name": "SOME_ENV_VAR",
+        "value": "A_COOL_ENV_VAR"
+      }
+    ]
+  },
+  {
+    "buildStepName": "dont drive maybe?",
+    "commandType": "shellCommand",
+    "command": "echo 'DONT DRIVE!'",
+    "dependsOn": []
+  },
+  {
+    "buildStepName": "drive car",
+    "commandType": "shellCommand",
+    "command": "echo I am driving OK!",
+    "dependsOn": [
+      "check tires", "check enough fuel"
+    ],
+    "conditionallyDependsOn": [
+      {
+        "buildStepName": "dont drive maybe?",
+        "outputting": "DONT DRIVE!"
+      }
+    ]
+  }
+]
