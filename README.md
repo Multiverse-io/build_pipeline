@@ -172,7 +172,7 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 
 ### Command Line Arguments
 
-[comment]: keep this in sync with the usage instrucitons in lib/run/command_line_arguments.ex
+<!-- keep this in sync with the usage instrucitons in lib/run/command_line_arguments.ex -->
 
 `--verbose` - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
 
