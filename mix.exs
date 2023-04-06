@@ -20,9 +20,9 @@ defmodule BuildPipeline.MixProject do
   defp package do
     [
       name: "build_pipeline",
-      licenses: ["WTFPL"],
-      links: %{"GitHub" => "https://github.com/mbernerslee/build_pipeline"},
-      source_url: "https://github.com/mbernerslee/build_pipeline"
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/Multiverse-io/build_pipeline"},
+      source_url: "https://github.com/Multiverse-io/build_pipeline"
     ]
   end
 

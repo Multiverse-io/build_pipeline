@@ -1,5 +1,6 @@
 defmodule BuildPipeline.Run.TerminalMessages do
   alias IO.ANSI
+  alias BuildPipeline.Run.PrettyDurationMessage
 
   def pending(%{runners: runners, terminal_width: terminal_width}) do
     runners
@@ -64,7 +65,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
     %{
       ansi_prefix: ANSI.green(),
       prefix: command,
-      suffix: "[Succeeded in #{duration_message(duration_in_microseconds)}] ✔ ",
+      suffix: "[Succeeded in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✔ ",
       runner_pid: runner_pid,
       line_update: true
     }
@@ -76,7 +77,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     message = """
     #{ANSI.green()}---------------------------------------------------------------------
-    #{command} [Succeeded in #{duration_message(duration_in_microseconds)}] ✔
+    #{command} [Succeeded in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✔
 
     #{ANSI.reset()}#{output}
     #{ANSI.green()}---------------------------------------------------------------------#{ANSI.reset()}
@@ -91,7 +92,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     message = """
     #{ANSI.red()}---------------------------------------------------------------------
-    #{command} [Failed in #{duration_message(duration_in_microseconds)}] ✘
+    #{command} [Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘
 
     #{ANSI.reset()}#{output}
     #{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}
@@ -105,7 +106,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     message = """
     #{ANSI.red()}---------------------------------------------------------------------
-    #{command} [Failed in #{duration_message(duration_in_microseconds)}] ✘
+    #{command} [Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘
     #{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}
     """
 
@@ -118,7 +119,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
     %{
       ansi_prefix: ANSI.red(),
       prefix: command,
-      suffix: "[Failed in #{duration_message(duration_in_microseconds)}] ✘ ",
+      suffix: "[Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘ ",
       runner_pid: runner_pid,
       line_update: true
     }
@@ -158,21 +159,5 @@ defmodule BuildPipeline.Run.TerminalMessages do
       runner_pid: runner_pid,
       line_update: true
     }
-  end
-
-  defp duration_message(duration_in_microseconds) do
-    cond do
-      duration_in_microseconds < 1000 ->
-        "#{duration_in_microseconds} μs"
-
-      duration_in_microseconds < 1_000_000 ->
-        "#{round(duration_in_microseconds / 1000)} ms"
-
-      duration_in_microseconds < 60_000_000 ->
-        "#{Float.round(duration_in_microseconds / 1_000_000, 1)} s"
-
-      true ->
-        "#{Float.round(duration_in_microseconds / 60_000_000, 1)} min"
-    end
   end
 end
