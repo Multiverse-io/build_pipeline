@@ -2,6 +2,8 @@ defmodule BuildPipeline.Run.ConfigFileTest do
   use ExUnit.Case, async: true
   alias BuildPipeline.Run.ConfigFile
 
+  @moduletag timeout: 100
+
   @simple_example_dir "./example_projects/simple_and_functioning"
   @simple_example_json File.read!("#{@simple_example_dir}/build_pipeline/config.json")
   @setup %{cwd: "."}
@@ -184,8 +186,16 @@ defmodule BuildPipeline.Run.ConfigFileTest do
     end
 
     test "when a dependsOn is missing, returns error" do
-      missing_key =
-        "[\n  {\"buildStepName\": \"sayHello\", \"commandType\": \"shellCommand\", \"command\": \"echo 'hello'\", \"dependsOn\": [\"approachHuman\"]}\n]\n"
+      missing_key = """
+          [
+            {"buildStepName": "sayHello",
+            "commandType": "shellCommand",
+            "command": "echo 'hello'",
+            "dependsOn": ["approachHuman"]
+            }
+          ]
+
+      """
 
       assert {:error,
               {:invalid_config,
@@ -249,7 +259,25 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: enoughFuel <-> enoughFuel"}} =
+               ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "depending on yourself" do
+      json = """
+      [
+        {
+        "buildStepName": "A",
+        "commandType": "shellCommand",
+        "command": "echo 'tires'",
+        "dependsOn": ["A"]
+      }
+      ]
+      """
+
+      assert {:error,
+              {:invalid_config,
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
     end
 
@@ -265,7 +293,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
     end
 
@@ -280,7 +308,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
     end
 
@@ -296,7 +324,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
     end
 
@@ -313,7 +341,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
     end
 
@@ -330,7 +358,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
     end
 
@@ -351,7 +379,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
     end
 
@@ -372,8 +400,138 @@ defmodule BuildPipeline.Run.ConfigFileTest do
 
       assert {:error,
               {:invalid_config,
-               "I failed to parse the build_pipeline_config because I found a circular dependency!"}} =
+               "I failed to parse the build_pipeline_config because I found a circular dependency: A <-> A"}} =
                ConfigFile.parse_and_validate({json, @setup})
+    end
+
+    test "x" do
+      json = """
+            [
+        {
+          "buildStepName": "find_todos",
+          "commandType": "script",
+          "command": "find_todos",
+          "dependsOn": []
+        },
+        {
+          "buildStepName": "deps.get",
+          "commandType": "shellCommand",
+          "command": "mix deps.get",
+          "dependsOn": []
+        },
+        {
+          "buildStepName": "loadconfig",
+          "commandType": "shellCommand",
+          "command": "mix loadconfig config/prod.exs",
+          "dependsOn": []
+        },
+        {
+          "buildStepName": "compileDev",
+          "commandType": "shellCommand",
+          "command": "mix compile",
+          "dependsOn": [
+            "deps.get"
+          ],
+
+         "envVars": [
+            {
+              "name": "MIX_ENV",
+              "value": "dev"
+            }
+          ]
+        },
+        {
+          "buildStepName": "compileTest",
+          "commandType": "shellCommand",
+          "command" : "mix compile --force --warnings-as-errors",
+          "dependsOn": [
+            "deps.get"
+          ],
+          "envVars": [
+            {
+              "name": "MIX_ENV",
+              "value": "test"
+            }
+          ]
+        },
+
+        {
+          "buildStepName": "test",
+          "commandType": "shellCommand",
+          "command": "mix test --color",
+          "dependsOn": [
+            "compileTest"
+          ]
+        },
+        {
+          "buildStepName": "escriptBuildDev",
+          "commandType": "shellCommand",
+          "command": "mix escript.build",
+          "dependsOn": [
+            "compileDev"
+          ],
+          "envVars": [
+            {
+              "name": "MIX_ENV",
+
+             "value": "dev"
+            }
+          ]
+        },
+        {
+          "buildStepName": "end_to_end_test",
+          "commandType": "script",
+          "command": "end_to_end_test",
+          "dependsOn": [
+            "compileDev"
+          ]
+        },
+        {
+          "buildStepName": "exit_code_correctness_end_to_end_test",
+          "commandType": "script",
+          "command": "exit_code_correctness_end_to_end_test",
+          "dependsOn": [
+            "compileDev"
+          ]
+        },
+        {
+          "buildStepName": "preflight_checks_return_non_zero_exit_code_test",
+          "commandType": "script",
+          "command": "preflight_checks_return_non_zero_exit_code_test",
+          "dependsOn": [
+            "compileDev"
+          ]
+        },
+        {
+          "buildStepName": "running_steps_get_terminated_properly",
+          "commandType": "script",
+          "command": "running_steps_get_terminated_properly",
+          "dependsOn": [
+            "compileDev"
+          ]
+        },
+        {
+          "buildStepName": "escriptBuild",
+          "commandType": "shellCommand",
+          "command": "mix escript.build",
+          "dependsOn": [
+            "test",
+            "end_to_end_test",
+            "exit_code_correctness_end_to_end_test",
+            "preflight_checks_return_non_zero_exit_code_test",
+            "running_steps_get_terminated_properly"
+          ],
+          "envVars": [
+            {
+              "name": "MIX_ENV",
+              "value": "prod"
+            }
+          ]
+        }
+      ]
+      """
+
+      assert {:ok, _} = ConfigFile.parse_and_validate({json, @setup})
     end
   end
 end

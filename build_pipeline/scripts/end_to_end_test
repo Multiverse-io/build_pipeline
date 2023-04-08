@@ -5,9 +5,9 @@ project_dir="$example_projects_dir/test_project"
 rm -rf $project_dir
 cd $example_projects_dir
 mix new test_project > /dev/null 2>&1
-./../bp init --cwd test_project
+./../bp_dev init --cwd test_project
 init_result=$?
-./../bp run --cwd test_project
+./../bp_dev run --cwd test_project
 run_result=$?
 if [ $init_result -ne 0 ]; then
   echo "FAILED - mix build_pipeline.init"

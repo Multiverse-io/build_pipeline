@@ -6,17 +6,37 @@
     "dependsOn": []
   },
   {
-    "buildStepName": "deps.get",
+    "buildStepName": "mix deps.get",
     "commandType": "shellCommand",
     "command": "mix deps.get",
     "dependsOn": []
   },
   {
-    "buildStepName": "compile",
+    "buildStepName": "mix loadconfig config/prod.exs",
+    "commandType": "shellCommand",
+    "command": "mix loadconfig config/prod.exs",
+    "dependsOn": []
+  },
+  {
+    "buildStepName": "MIX_ENV=dev mix compile",
+    "commandType": "shellCommand",
+    "command": "mix compile",
+    "dependsOn": [
+      "mix deps.get"
+    ],
+    "envVars": [
+      {
+        "name": "MIX_ENV",
+        "value": "dev"
+      }
+    ]
+  },
+  {
+    "buildStepName": "MIX_ENV=test mix compile --force --warnings-as-errors",
     "commandType": "shellCommand",
     "command": "mix compile --force --warnings-as-errors",
     "dependsOn": [
-      "deps.get"
+      "mix deps.get"
     ],
     "envVars": [
       {
@@ -26,30 +46,24 @@
     ]
   },
   {
-    "buildStepName": "loadconfig",
-    "commandType": "shellCommand",
-    "command": "mix loadconfig config/prod.exs",
-    "dependsOn": []
-  },
-  {
-    "buildStepName": "test",
+    "buildStepName": "mix test --color",
     "commandType": "shellCommand",
     "command": "mix test --color",
     "dependsOn": [
-      "compile"
+      "MIX_ENV=test mix compile --force --warnings-as-errors"
     ]
   },
   {
-    "buildStepName": "escriptBuild",
+    "buildStepName": "MIX_ENV=dev mix escript.build",
     "commandType": "shellCommand",
     "command": "mix escript.build",
     "dependsOn": [
-      "test"
+      "MIX_ENV=dev mix compile"
     ],
     "envVars": [
       {
         "name": "MIX_ENV",
-        "value": "prod"
+        "value": "dev"
       }
     ]
   },
@@ -58,7 +72,7 @@
     "commandType": "script",
     "command": "end_to_end_test",
     "dependsOn": [
-      "escriptBuild"
+      "MIX_ENV=dev mix escript.build"
     ]
   },
   {
@@ -66,7 +80,7 @@
     "commandType": "script",
     "command": "exit_code_correctness_end_to_end_test",
     "dependsOn": [
-      "escriptBuild"
+      "MIX_ENV=dev mix escript.build"
     ]
   },
   {
@@ -74,7 +88,33 @@
     "commandType": "script",
     "command": "preflight_checks_return_non_zero_exit_code_test",
     "dependsOn": [
-      "escriptBuild"
+      "MIX_ENV=dev mix escript.build"
+    ]
+  },
+  {
+    "buildStepName": "running_steps_get_terminated_properly",
+    "commandType": "script",
+    "command": "running_steps_get_terminated_properly",
+    "dependsOn": [
+      "MIX_ENV=dev mix escript.build"
+    ]
+  },
+  {
+    "buildStepName": "escriptBuild",
+    "commandType": "shellCommand",
+    "command": "mix escript.build",
+    "dependsOn": [
+      "mix test --color",
+      "end_to_end_test",
+      "exit_code_correctness_end_to_end_test",
+      "preflight_checks_return_non_zero_exit_code_test",
+      "running_steps_get_terminated_properly"
+    ],
+    "envVars": [
+      {
+        "name": "MIX_ENV",
+        "value": "prod"
+      }
     ]
   }
 ]
