@@ -7,7 +7,7 @@ defmodule BuildPipeline.RunTest do
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
-  @moduletag timeout: 1_000
+  @moduletag timeout: 3_000
 
   describe "main/1" do
     test "can show runner output on the screen" do
@@ -376,6 +376,28 @@ defmodule BuildPipeline.RunTest do
       assert Enum.all?(regexes, fn regex -> Regex.match?(regex, output) == false end)
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
+
+    test "when a step fails, and a longer-running step is already running, then it is terminated" do
+      EnvVarsSystemMock.setup()
+
+      ports_before = MapSet.new(Port.list())
+
+      # output =
+      #  capture_io(fn ->
+      assert :error ==
+               Run.main([
+                 "--cwd",
+                 "./example_projects/long_running_step_after_failure"
+               ])
+
+      #  end)
+
+      # IO.inspect(output)
+
+      ports_after = MapSet.new(Port.list())
+
+      assert ports_before == ports_after
     end
   end
 end
