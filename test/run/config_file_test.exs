@@ -402,7 +402,7 @@ defmodule BuildPipeline.Run.ConfigFileTest do
                ConfigFile.parse_and_validate({json, @setup})
     end
 
-    test "x" do
+    test "doesn't falsely say there's a circular dependency in a real life scenario that doesn't have one" do
       json = """
             [
         {
