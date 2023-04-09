@@ -184,5 +184,39 @@ defmodule BuildPipeline.Run.LineUpdateTerminalMessageTest do
 
       assert built_message =~ "YYYecho 'hello mo\e["
     end
+
+    test "given a truncate = true message, truncates it to fit the line" do
+      message = %{
+        ansi_prefix: "YYY",
+        prefix: "echo 'hello mother'",
+        suffix: "[Running]",
+        truncate: true
+      }
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_terminal_width(25)
+
+      built_message = LineUpdateTerminalMessage.build(message, server_state)
+
+      assert built_message =~ "YYYecho 'hello ... [Running]\e["
+    end
+
+    test "given a truncate = true message, does not truncate the message when it doesn't need to" do
+      message = %{
+        ansi_prefix: "YYY",
+        prefix: "echo 'hello mother'",
+        suffix: "[Running]",
+        truncate: true
+      }
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_terminal_width(100)
+
+      built_message = LineUpdateTerminalMessage.build(message, server_state)
+
+      assert built_message =~ "YYYecho 'hello mother' [Running]\e[0m"
+    end
   end
 end

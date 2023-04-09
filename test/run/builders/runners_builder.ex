@@ -140,6 +140,10 @@ defmodule BuildPipeline.Run.Builders.RunnersBuilder do
     Map.put(runner, :status, status)
   end
 
+  def with_command_env_vars(runner, command_env_vars) do
+    Map.put(runner, :command_env_vars, command_env_vars)
+  end
+
   def build_step_name do
     Pokemon.name() <> to_string(positive_number())
   end
