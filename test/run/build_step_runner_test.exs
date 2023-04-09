@@ -5,6 +5,7 @@ defmodule BuildPipeline.Run.BuildStepRunnerTest do
 
   @build_step BuildStepBuilder.build()
   @cwd "."
+  @moduletag timeout: 1_000
 
   describe "start_link/2" do
     test "starts up a build step runner process with the status 'waiting'" do
