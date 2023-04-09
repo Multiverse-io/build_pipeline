@@ -1,4 +1,0 @@
-#!/bin/bash
-
-echo "I'm exiting with code = 1"
-exit 1
