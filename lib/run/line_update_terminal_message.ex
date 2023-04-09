@@ -6,7 +6,7 @@ defmodule BuildPipeline.Run.LineUpdateTerminalMessage do
     %{runners: runners, terminal_width: terminal_width} = server_state
     %{terminal_line_number: line_number} = Map.fetch!(runners, runner_pid)
 
-    message = combine_onto_one_line(prefix, suffix, terminal_width)
+    message = single_line_message(prefix, suffix, terminal_width)
     wrapped_message = "#{ansi_prefix}#{message}#{ANSI.reset()}"
 
     max_lines = max_runner_output_lines(runners)
@@ -16,18 +16,26 @@ defmodule BuildPipeline.Run.LineUpdateTerminalMessage do
     "\r#{ANSI.cursor_up(line_shift)}\r#{ANSI.clear_line()}#{wrapped_message}#{ANSI.cursor_down(line_shift)}\r"
   end
 
-  defp combine_onto_one_line(prefix, suffix, max_length) do
+  def build(%{truncate: true} = message, server_state) do
+    %{ansi_prefix: ansi_prefix, prefix: prefix, suffix: suffix} = message
+    %{terminal_width: terminal_width} = server_state
+
+    message = single_line_message(prefix, suffix, terminal_width)
+    "#{ansi_prefix}#{message}#{ANSI.reset()}"
+  end
+
+  defp single_line_message(prefix, suffix, max_length) do
     prefix_len = String.length(prefix)
     suffix_len = String.length(suffix)
 
     if prefix_len + suffix_len + 1 < max_length do
       prefix <> " " <> suffix
     else
-      acc_single_line_message(prefix, suffix, max_length)
+      truncated_single_line_message(prefix, suffix, max_length)
     end
   end
 
-  defp acc_single_line_message(prefix, suffix, max_length) do
+  defp truncated_single_line_message(prefix, suffix, max_length) do
     prefix = String.graphemes(prefix)
     suffix = [" ", ".", ".", ".", " " | String.graphemes(suffix)]
     truncated_suffix_len = length(suffix)

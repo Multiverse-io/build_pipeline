@@ -19,6 +19,13 @@ defmodule BuildPipeline.Run.TerminalPrinter do
     end
   end
 
+  def runner_update(%{truncate: true} = message, server_state) do
+    if should_print_runner_output?() do
+      printable_msg = LineUpdateTerminalMessage.build(message, server_state)
+      IO.puts(printable_msg)
+    end
+  end
+
   defp should_print_runner_output? do
     Application.get_env(:build_pipeline, :print_runner_output, true)
   end
