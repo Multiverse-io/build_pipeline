@@ -28,5 +28,5 @@ build_pipeline-*.tar
 /test_output/
 build_pipeline/previous_run_result.json
 example_projects/**/previous_run_result.json
-example/projects/test_project/**
+example_projects/test_project/**
 bp_dev

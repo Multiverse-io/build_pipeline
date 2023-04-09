@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output=$(./bp run --cwd example_projects/bad_config)
+output=$(./bp_dev run --cwd example_projects/bad_config)
 test_exit_code=$?
 
 if [ $test_exit_code -eq 1 ]; then

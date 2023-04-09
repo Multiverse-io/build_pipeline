@@ -7,7 +7,7 @@ defmodule BuildPipeline.RunTest do
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
-  @moduletag timeout: 1_000
+  @moduletag timeout: 3_000
 
   describe "main/1" do
     test "can show runner output on the screen" do

@@ -159,72 +159,74 @@ defmodule BuildPipeline.Run.ConfigFile do
     end
   end
 
+  defp validate_depends_on(build_pipeline) do
+    build_pipeline
+    |> Map.new(&Map.pop!(&1, :build_step_name))
+    |> deps_tree()
+    |> Result.and_then(fn -> {:ok, build_pipeline} end)
+  end
+
+  defp deps_tree(pipeline), do: deps_tree([], Map.to_list(pipeline), pipeline)
+
+  defp deps_tree({:error, error}, [], _pipeline) do
+    {:error, error}
+  end
+
+  defp deps_tree(_, [], _pipeline) do
+    :ok
+  end
+
+  defp deps_tree(tree, [{name, _} | rest], pipeline) do
+    case deps_branch(name, name, [name], pipeline) do
+      {:error, error} -> {:error, error}
+      branch -> deps_tree([{name, branch} | tree], rest, pipeline)
+    end
+  end
+
+  defp deps_branch(root, dep, branch, pipeline) do
+    case Map.get(pipeline, dep) do
+      nil ->
+        no_depedency_error(dep)
+
+      %{depends_on: child_deps} ->
+        child_deps = MapSet.to_list(child_deps)
+
+        root
+        |> circular_depencency_check(branch, child_deps)
+        |> Result.and_then(fn ->
+          Enum.reduce_while(child_deps, branch, fn child_dep, branch ->
+            case deps_branch(root, child_dep, branch, pipeline) do
+              {:error, error} -> {:halt, {:error, error}}
+              new_branch -> {:cont, new_branch ++ branch}
+            end
+          end)
+        end)
+    end
+  end
+
+  defp circular_depencency_check(root, branch, nodes) do
+    Enum.reduce_while(nodes, :ok, fn node, _ ->
+      if Enum.member?(branch, node) do
+        {:halt, circular_reference_error(root, node)}
+      else
+        {:cont, :ok}
+      end
+    end)
+  end
+
   defp duplicate_build_step_name_error(name) do
     ~s|I failed to parse the build_pipeline_config because a the buildStepName "#{name}" was duplicated, but buildStepNames must be unique|
   end
 
-  defp validate_depends_on(build_pipeline) do
-    Enum.reduce_while(build_pipeline, [], fn build_step, _dependencies ->
-      case find_dependencies(build_step, build_pipeline) do
-        {:error, error} -> {:halt, {:error, {:invalid_config, error}}}
-        other -> {:cont, other}
-      end
-    end)
-    |> case do
-      {:error, error} -> {:error, error}
-      _ -> {:ok, build_pipeline}
-    end
-  end
-
-  defp find_dependencies(build_step, build_pipeline) do
-    build_step.depends_on
-    |> MapSet.to_list()
-    |> Enum.reduce_while([], fn depends_on, dependencies ->
-      case find_dependencies(depends_on, dependencies, build_pipeline) do
-        {:error, error} -> {:halt, {:error, error}}
-        other -> {:cont, other}
-      end
-    end)
-  end
-
-  defp find_dependencies(_depends_on, {:error, error}, _build_pipeline) do
-    {:error, error}
-  end
-
-  defp find_dependencies(depends_on, dependencies, build_pipeline) do
-    if Enum.member?(dependencies, depends_on) do
-      {:error, circular_depends_on_error()}
-    else
-      case find_dependency(depends_on, build_pipeline) do
-        nil ->
-          {:error, no_depedency_error(depends_on)}
-
-        build_step ->
-          build_step.depends_on
-          |> MapSet.to_list()
-          |> Enum.reduce([depends_on | dependencies], fn new_depends_on, new_dependencies ->
-            find_dependencies(new_depends_on, new_dependencies, build_pipeline)
-          end)
-          |> case do
-            {:halt, {:error, error}} ->
-              {:error, error}
-
-            other ->
-              other
-          end
-      end
-    end
-  end
-
-  defp find_dependency(depends_on, build_pipeline) do
-    Enum.find(build_pipeline, fn build_step -> build_step.build_step_name == depends_on end)
-  end
-
-  defp circular_depends_on_error do
-    "I failed to parse the build_pipeline_config because I found a circular dependency!"
+  defp circular_reference_error(name_1, name_2) do
+    {:error,
+     {:invalid_config,
+      "I failed to parse the build_pipeline_config because I found a circular dependency: #{name_1} <-> #{name_2}"}}
   end
 
   defp no_depedency_error(depends_on) do
-    "I failed to parse the build_pipeline_config because a build step had a dependsOn of '#{depends_on}' that does not exist"
+    {:error,
+     {:invalid_config,
+      "I failed to parse the build_pipeline_config because a build step had a dependsOn of '#{depends_on}' that does not exist"}}
   end
 end
