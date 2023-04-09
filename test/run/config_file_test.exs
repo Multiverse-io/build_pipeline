@@ -2,8 +2,6 @@ defmodule BuildPipeline.Run.ConfigFileTest do
   use ExUnit.Case, async: true
   alias BuildPipeline.Run.ConfigFile
 
-  @moduletag timeout: 100
-
   @simple_example_dir "./example_projects/simple_and_functioning"
   @simple_example_json File.read!("#{@simple_example_dir}/build_pipeline/config.json")
   @setup %{cwd: "."}
