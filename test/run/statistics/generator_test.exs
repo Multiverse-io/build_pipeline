@@ -59,6 +59,7 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
         RunnersBuilder.build_complete()
         |> RunnersBuilder.with_command("hc")
         |> RunnersBuilder.with_build_step_name("h")
+        |> RunnersBuilder.with_command_env_vars([{"MIX_ENV", "test"}, {"COOL", "ENV"}])
         |> RunnersBuilder.with_duration_in_microseconds(0.1)
         |> RunnersBuilder.with_depends_on(MapSet.new([]))
 
@@ -82,6 +83,7 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
                     steps: [
                       %{
                         command: "gc",
+                        command_env_vars: [],
                         duration_in_microseconds: 64,
                         status: :complete,
                         exit_code: 1
@@ -93,12 +95,14 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
                     steps: [
                       %{
                         command: "ac",
+                        command_env_vars: [],
                         duration_in_microseconds: 1,
                         status: :complete,
                         exit_code: 0
                       },
                       %{
                         command: "fc",
+                        command_env_vars: [],
                         duration_in_microseconds: 32,
                         status: :complete,
                         exit_code: 0
@@ -110,24 +114,28 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
                     steps: [
                       %{
                         command: "ac",
+                        command_env_vars: [],
                         duration_in_microseconds: 1,
                         status: :complete,
                         exit_code: 0
                       },
                       %{
                         command: "cc",
+                        command_env_vars: [],
                         duration_in_microseconds: 4,
                         status: :complete,
                         exit_code: 0
                       },
                       %{
                         command: "dc",
+                        command_env_vars: [],
                         duration_in_microseconds: 8,
                         status: :complete,
                         exit_code: 0
                       },
                       %{
                         command: "ec",
+                        command_env_vars: [],
                         duration_in_microseconds: 16,
                         status: :complete,
                         exit_code: 0
@@ -139,24 +147,28 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
                     steps: [
                       %{
                         command: "ac",
+                        command_env_vars: [],
                         duration_in_microseconds: 1,
                         status: :complete,
                         exit_code: 0
                       },
                       %{
                         command: "bc",
+                        command_env_vars: [],
                         duration_in_microseconds: 2,
                         status: :complete,
                         exit_code: 0
                       },
                       %{
                         command: "dc",
+                        command_env_vars: [],
                         duration_in_microseconds: 8,
                         status: :complete,
                         exit_code: 0
                       },
                       %{
                         command: "ec",
+                        command_env_vars: [],
                         duration_in_microseconds: 16,
                         status: :complete,
                         exit_code: 0
@@ -168,6 +180,7 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
                     steps: [
                       %{
                         command: "hc",
+                        command_env_vars: [{"MIX_ENV", "test"}, {"COOL", "ENV"}],
                         duration_in_microseconds: 0.1,
                         status: :complete,
                         exit_code: 0
@@ -245,12 +258,14 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
                     steps: [
                       %{
                         command: "ac",
+                        command_env_vars: [],
                         duration_in_microseconds: 1,
                         exit_code: 0,
                         status: :complete
                       },
                       %{
                         command: "bc",
+                        command_env_vars: [],
                         duration_in_microseconds: 2,
                         exit_code: 0,
                         status: :complete
@@ -262,11 +277,17 @@ defmodule BuildPipeline.Run.Statistics.GeneratorTest do
                     steps: [
                       %{
                         command: "ac",
+                        command_env_vars: [],
                         duration_in_microseconds: 1,
                         exit_code: 0,
                         status: :complete
                       },
-                      %{command: "cc", status: :skip, duration_in_microseconds: 0}
+                      %{
+                        command: "cc",
+                        command_env_vars: [],
+                        status: :skip,
+                        duration_in_microseconds: 0
+                      }
                     ]
                   }
                 ]}

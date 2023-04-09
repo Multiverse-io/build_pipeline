@@ -43,7 +43,7 @@ defmodule BuildPipeline.Run.Statistics.Generator do
   defp step_stats(runner_map, step) do
     runner_map
     |> Map.fetch!(step)
-    |> Map.take([:command, :duration_in_microseconds, :status, :exit_code])
+    |> Map.take([:command, :duration_in_microseconds, :status, :exit_code, :command_env_vars])
     |> Map.put_new(:duration_in_microseconds, 0)
   end
 

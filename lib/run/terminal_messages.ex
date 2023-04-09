@@ -1,6 +1,6 @@
 defmodule BuildPipeline.Run.TerminalMessages do
   alias IO.ANSI
-  alias BuildPipeline.Run.PrettyDurationMessage
+  alias BuildPipeline.Run.{CoreRunnerMessage, PrettyDurationMessage}
 
   def pending(%{runners: runners}) do
     runners
@@ -15,7 +15,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
       %{
         ansi_prefix: ansi_prefix,
-        prefix: main_command_msg(runner),
+        prefix: CoreRunnerMessage.create(runner),
         suffix: suffix,
         truncate: true
       }
@@ -27,7 +27,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     %{
       ansi_prefix: ANSI.magenta(),
-      prefix: main_command_msg(runner),
+      prefix: CoreRunnerMessage.create(runner),
       suffix: "[Running]",
       runner_pid: runner_pid,
       line_update: true
@@ -38,7 +38,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
     runner = Map.fetch!(runners, runner_pid)
 
     %{
-      message: "#{ANSI.magenta()}#{main_command_msg(runner)} [Running]",
+      message: "#{ANSI.magenta()}#{CoreRunnerMessage.create(runner)} [Running]",
       line_update: false
     }
   end
@@ -48,7 +48,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     message = """
     #{ANSI.magenta()}---------------------------------------------------------------------
-    #{main_command_msg(runner)} [Running]
+    #{CoreRunnerMessage.create(runner)} [Running]
     ---------------------------------------------------------------------#{ANSI.reset()}
     """
 
@@ -60,7 +60,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     %{
       ansi_prefix: ANSI.green(),
-      prefix: main_command_msg(runner),
+      prefix: CoreRunnerMessage.create(runner),
       suffix: "[Succeeded in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✔ ",
       runner_pid: runner_pid,
       line_update: true
@@ -72,7 +72,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     message = """
     #{ANSI.green()}---------------------------------------------------------------------
-    #{main_command_msg(runner)} [Succeeded in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✔
+    #{CoreRunnerMessage.create(runner)} [Succeeded in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✔
 
     #{ANSI.reset()}#{output}
     #{ANSI.green()}---------------------------------------------------------------------#{ANSI.reset()}
@@ -86,7 +86,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     message = """
     #{ANSI.red()}---------------------------------------------------------------------
-    #{main_command_msg(runner)} [Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘
+    #{CoreRunnerMessage.create(runner)} [Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘
 
     #{ANSI.reset()}#{output}
     #{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}
@@ -100,7 +100,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     message = """
     #{ANSI.red()}---------------------------------------------------------------------
-    #{main_command_msg(runner)} [Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘
+    #{CoreRunnerMessage.create(runner)} [Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘
     #{ANSI.red()}---------------------------------------------------------------------#{ANSI.reset()}
     """
 
@@ -112,7 +112,7 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
     %{
       ansi_prefix: ANSI.red(),
-      prefix: main_command_msg(runner),
+      prefix: CoreRunnerMessage.create(runner),
       suffix: "[Failed in #{PrettyDurationMessage.create(duration_in_microseconds)}] ✘ ",
       runner_pid: runner_pid,
       line_update: true
@@ -140,7 +140,8 @@ defmodule BuildPipeline.Run.TerminalMessages do
 
   defp abort_message(mode, runner, _) when mode in [:verbose, :debug] do
     %{
-      message: "#{ANSI.magenta()}#{ANSI.crossed_out()}#{main_command_msg(runner)} [Aborted]",
+      message:
+        "#{ANSI.magenta()}#{ANSI.crossed_out()}#{CoreRunnerMessage.create(runner)} [Aborted]",
       line_update: false
     }
   end
@@ -148,20 +149,10 @@ defmodule BuildPipeline.Run.TerminalMessages do
   defp abort_message(:normal, runner, runner_pid) do
     %{
       ansi_prefix: "#{ANSI.magenta()}#{ANSI.crossed_out()}",
-      prefix: main_command_msg(runner),
+      prefix: CoreRunnerMessage.create(runner),
       suffix: "[Aborted]",
       runner_pid: runner_pid,
       line_update: true
     }
-  end
-
-  defp main_command_msg(runner) do
-    %{command: command, command_env_vars: command_env_vars} = runner
-
-    command_env_vars
-    |> Enum.reverse()
-    |> Enum.reduce(command, fn {env_key, env_value}, msg ->
-      "#{env_key}=#{env_value} #{msg}"
-    end)
   end
 end
