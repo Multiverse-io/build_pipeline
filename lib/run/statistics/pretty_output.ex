@@ -1,5 +1,5 @@
 defmodule BuildPipeline.Run.Statistics.PrettyOutput do
-  alias BuildPipeline.Run.PrettyDurationMessage
+  alias BuildPipeline.Run.{PrettyDurationMessage, CoreRunnerMessage}
 
   def generate(branches) do
     output =
@@ -31,9 +31,12 @@ defmodule BuildPipeline.Run.Statistics.PrettyOutput do
     [%{command: last} | _] = Enum.reverse(steps)
 
     steps
-    |> Enum.map(fn %{command: command, duration_in_microseconds: duration_in_microseconds} ->
+    |> Enum.map(fn runner ->
+      %{command: command, duration_in_microseconds: duration_in_microseconds} = runner
+
       prefix = if command == last, do: "└", else: "├"
-      "#{prefix}── #{command} [#{PrettyDurationMessage.create(duration_in_microseconds)}]"
+
+      "#{prefix}── #{CoreRunnerMessage.create(runner)} [#{PrettyDurationMessage.create(duration_in_microseconds)}]"
     end)
     |> Enum.join("\n")
   end
