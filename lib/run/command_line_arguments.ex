@@ -5,7 +5,8 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     mode: :normal,
     save_result: false,
     run_from_failed: false,
-    show_stats: false
+    show_stats: false,
+    halt_when_done: true
   }
   @cwd "--cwd"
   @verbose "--verbose"
@@ -13,6 +14,8 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   @from_failed "--ff"
   @run_all "--ra"
   @stats "--stats"
+  @analyse_self_worth "--analyse-self-worth"
+  # TODO update usage_instructions & the readme about --analyse_self_worth
   # keep usage_instructions in sync with the README.md file
   @usage_instructions """
   usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra] [--stats]
@@ -60,17 +63,38 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     end
   end
 
-  defp acc_setup_from_cli_args(setup, []) do
+  #TODO add tests for args incompatible with --analyse_self_worth
+  defp acc_setup_from_cli_args(setup, command_line_args) do
+    case analyse_self_worth(command_line_args) do
+      {true, command_line_args} ->
+        setup
+        |> Map.put(:mode, {:analyse_self_worth, command_line_args})
+        |> do_acc_setup_from_cli_args(command_line_args)
+
+      {false, command_line_args} ->
+        do_acc_setup_from_cli_args(setup, command_line_args)
+    end
+  end
+
+  defp analyse_self_worth(command_line_args) do
+    if Enum.member?(command_line_args, @analyse_self_worth) do
+      {true, command_line_args -- [@analyse_self_worth]}
+    else
+      {false, command_line_args}
+    end
+  end
+
+  defp do_acc_setup_from_cli_args(setup, []) do
     {:ok, setup}
   end
 
-  defp acc_setup_from_cli_args(setup, [@cwd, cwd | rest]) do
-    acc_setup_from_cli_args(Map.put(setup, :cwd, cwd), rest)
+  defp do_acc_setup_from_cli_args(setup, [@cwd, cwd | rest]) do
+    do_acc_setup_from_cli_args(Map.put(setup, :cwd, cwd), rest)
   end
 
-  defp acc_setup_from_cli_args(setup, [cli_arg | rest]) do
+  defp do_acc_setup_from_cli_args(setup, [cli_arg | rest]) do
     case put_setup_from_singular_cli_arg(setup, cli_arg) do
-      {:ok, setup} -> acc_setup_from_cli_args(setup, rest)
+      {:ok, setup} -> do_acc_setup_from_cli_args(setup, rest)
       error -> error
     end
   end

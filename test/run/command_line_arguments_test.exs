@@ -42,7 +42,8 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 save_result: false,
                 run_from_failed: false,
                 a: 1,
-                show_stats: false
+                show_stats: false,
+                halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{a: 1}, [])
     end
@@ -54,7 +55,8 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 mode: :normal,
                 save_result: true,
                 run_from_failed: true,
-                show_stats: false
+                show_stats: false,
+                halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{save_result: false, run_from_failed: false}, [
                  "--ff"
@@ -68,7 +70,8 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 mode: :normal,
                 save_result: false,
                 run_from_failed: false,
-                show_stats: false
+                show_stats: false,
+                halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{}, [])
     end
@@ -129,6 +132,13 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
     test "with --stats and --debug, returns an error because these args are incompatible" do
       assert {:error, {:bad_arguments, @incompatible_args_error}} =
                CommandLineArguments.parse(%{}, ["--debug", "--stats", "--cwd", "cool/path"])
+    end
+
+    test "with --analyse-self-worth, returns it as the mode" do
+      assert {:ok,
+              %{
+                mode: {:analyse_self_worth, ["--cwd", "some/dir"]}
+              }} = CommandLineArguments.parse(%{}, ["--cwd", "some/dir", "--analyse-self-worth"])
     end
   end
 end

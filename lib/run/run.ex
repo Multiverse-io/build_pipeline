@@ -1,5 +1,6 @@
 defmodule BuildPipeline.Run do
   alias BuildPipeline.Run.{
+    AnalyseSelfWorth,
     CommandLineArguments,
     ConfigFile,
     EnvVars,
@@ -10,17 +11,32 @@ defmodule BuildPipeline.Run do
     TerminalWidth
   }
 
-  def main(command_line_args \\ []) do
-    run(command_line_args)
+  def main(command_line_args \\ [], setup_override_fun \\ fn x -> x end) do
+    run(command_line_args, setup_override_fun)
   end
 
-  defp run(command_line_args) do
+  defp run(command_line_args, setup_override_fun) do
     command_line_args
-    |> preflight_checks()
+    |> preflight_checks(setup_override_fun)
+    |> analyse_self_worth()
     |> run_if_preflight_checks_passed()
   end
 
-  defp preflight_checks(command_line_args) do
+  defp analyse_self_worth({:ok, setup}) do
+    case setup.setup.mode do
+      {:analyse_self_worth, command_line_args} ->
+        AnalyseSelfWorth.run(command_line_args)
+
+      _ ->
+        {:ok, setup}
+    end
+  end
+
+  defp analyse_self_worth(error) do
+    error
+  end
+
+  defp preflight_checks(command_line_args, setup_override_fun) do
     EnvVars.read()
     |> Result.and_then(&CommandLineArguments.parse(&1, command_line_args))
     |> Result.and_then(&ConfigFile.read/1)
@@ -29,6 +45,11 @@ defmodule BuildPipeline.Run do
     |> Result.and_then(&PreviousRunResult.read/1)
     |> Result.and_then(&PreviousRunResult.parse_and_validate/1)
     |> Result.and_then(&UnskipAllIfSkippingAll.parse/1)
+    |> Result.and_then(fn setup -> {:ok, setup_override_fun.(setup)} end)
+  end
+
+  defp run_if_preflight_checks_passed({:ok, :noop}) do
+    :ok
   end
 
   defp run_if_preflight_checks_passed({:ok, setup}) do
@@ -43,7 +64,12 @@ defmodule BuildPipeline.Run do
         end
 
         Supervisor.stop(supervisor_pid)
-        result |> exit_code_from_result() |> exit_with_code()
+
+        if result.halt_when_done do
+          result |> exit_code_from_result() |> exit_with_code()
+        else
+          result
+        end
     end
   end
 
@@ -88,7 +114,7 @@ defmodule BuildPipeline.Run do
     :error
   end
 
-  defp exit_with_code(exit_code) do
+  def exit_with_code(exit_code) do
     if Application.get_env(:build_pipeline, :env) == :test do
       :ok
     else

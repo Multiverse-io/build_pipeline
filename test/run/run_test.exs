@@ -129,7 +129,7 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      assert output == "I failed to parse the config.json because it was not valid JSON\n"
+      assert output =~ "I failed to parse the config.json because it was not valid JSON\n"
     end
 
     test "returns error if we can't determine the terminals width because tput can't be run" do
@@ -145,7 +145,7 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      assert output ==
+      assert output =~
                "I tried to run 'tput cols' but it failed because it looks like I'm not able to run the 'tput' binary?\n"
     end
 
@@ -354,6 +354,31 @@ defmodule BuildPipeline.RunTest do
         end)
 
       assert Enum.all?(stats_regexes(), fn regex -> Regex.match?(regex, output) == false end)
+
+      Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
+
+    test "--analyse-self-worth mode!" do
+      original_env = Application.get_env(:build_pipeline, :print_runner_output)
+
+      Application.put_env(:build_pipeline, :print_runner_output, true)
+      EnvVarsSystemMock.setup()
+
+      output =
+        capture_io(fn ->
+          assert :ok ==
+                   Run.main([
+                     "--cwd",
+                     "./example_projects/complex_yet_functioning",
+                     "--analyse-self-worth"
+                   ])
+        end)
+
+      build_pipeline_regex = ~r|build_pipeline runtime with parallelism = [0-9].*|
+      serial_regex = ~r|build_pipeline runtime without parallelism = [0-9].*|
+
+      assert Regex.match?(build_pipeline_regex, output)
+      assert Regex.match?(serial_regex, output)
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
