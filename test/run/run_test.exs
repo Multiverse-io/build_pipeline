@@ -364,6 +364,14 @@ defmodule BuildPipeline.RunTest do
       Application.put_env(:build_pipeline, :print_runner_output, true)
       EnvVarsSystemMock.setup()
 
+      # TODO delete the double running
+      assert :ok ==
+               Run.main([
+                 "--cwd",
+                 "./example_projects/complex_yet_functioning",
+                 "--analyse-self-worth"
+               ])
+
       output =
         capture_io(fn ->
           assert :ok ==

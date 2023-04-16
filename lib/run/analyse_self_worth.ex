@@ -11,7 +11,8 @@ defmodule BuildPipeline.Run.AnalyseSelfWorth do
       time_run(command_line_args, :build_pipeline, timings)
     end)
     |> Result.and_then(fn timings ->
-      time_run(command_line_args ++ ["--debug"], :serially, timings)
+      # time_run(command_line_args ++ ["--debug"], :serially, timings)
+      debug_run(command_line_args)
     end)
     |> case do
       {:ok, %{build_pipeline: build_pipeline, serially: without_build_pipeline}} ->
@@ -27,6 +28,15 @@ defmodule BuildPipeline.Run.AnalyseSelfWorth do
         puts("Failed!")
         Run.exit_with_code(1)
     end
+  end
+
+  defp debug_run(command_line_args) do
+    Run.main(command_line_args, fn setup ->
+      put_in(setup, [:setup, :halt_when_done], false)
+    end)
+    |> IO.inspect()
+
+    raise "no"
   end
 
   defp time_run(command_line_args, run_name, timings) do

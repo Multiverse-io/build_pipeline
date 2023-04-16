@@ -65,11 +65,18 @@ defmodule BuildPipeline.Run do
 
         Supervisor.stop(supervisor_pid)
 
-        if result.halt_when_done do
-          result |> exit_code_from_result() |> exit_with_code()
-        else
-          result
-        end
+        maybe_exit(result)
+    end
+  end
+
+  defp maybe_exit(result) do
+    IO.inspect(result)
+
+    if result.halt_when_done == true && Application.get_env(:build_pipeline, :env) !== :test do
+      {:ok, result}
+    else
+      exit_code = if result.result == :success, do: 0, else: 1
+      System.halt(exit_code)
     end
   end
 
@@ -121,9 +128,6 @@ defmodule BuildPipeline.Run do
       System.halt(exit_code)
     end
   end
-
-  defp exit_code_from_result(%{result: :success}), do: 0
-  defp exit_code_from_result(%{result: _}), do: 1
 
   defp finished_message(%{result: :success}) do
     "#{IO.ANSI.green()}\n************************\nBuild Pipeline - Success\n************************#{IO.ANSI.reset()}"
