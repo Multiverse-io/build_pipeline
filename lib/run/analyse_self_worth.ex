@@ -7,49 +7,82 @@ defmodule BuildPipeline.Run.AnalyseSelfWorth do
   # TODO when running with debug, add up all the times of the individual build_steps instead. that would give a more realistic non-build_pipeline time. compare that to the build_pipeline time with parallelism!
   def run(command_line_args) do
     {:ok, %{}}
-    |> Result.and_then(fn timings ->
-      time_run(command_line_args, :build_pipeline, timings)
-    end)
-    |> Result.and_then(fn timings ->
-      # time_run(command_line_args ++ ["--debug"], :serially, timings)
-      debug_run(command_line_args)
-    end)
+    |> Result.and_then(fn timings -> time_build_pipeline_run(command_line_args, timings) end)
+    |> Result.and_then(fn timings -> time_serial_run(command_line_args, timings) end)
     |> case do
       {:ok, %{build_pipeline: build_pipeline, serially: without_build_pipeline}} ->
         puts("""
-        build_pipeline runtime with parallelism = #{PrettyDurationMessage.create(build_pipeline)}
-        build_pipeline runtime without parallelism = #{PrettyDurationMessage.create(without_build_pipeline)}
+        *********************************************************************
+        Self Wort Analysis
+        *********************************************************************
+
+        build_pipeline runtime = #{PrettyDurationMessage.create(build_pipeline)}
+        serial runtime = #{PrettyDurationMessage.create(without_build_pipeline)}
+
+        #{self_worth_msg(build_pipeline, without_build_pipeline)}
+        *********************************************************************
         """)
 
         Run.exit_with_code(0)
         {:ok, :noop}
 
       _ ->
-        puts("Failed!")
         Run.exit_with_code(1)
     end
   end
 
-  defp debug_run(command_line_args) do
-    Run.main(command_line_args, fn setup ->
-      put_in(setup, [:setup, :halt_when_done], false)
-    end)
-    |> IO.inspect()
+  defp self_worth_msg(build_pipeline, without_build_pipeline) do
+    diff = without_build_pipeline - build_pipeline
 
-    raise "no"
+    cond do
+      diff > 0 ->
+        "I made things faster to the tune of #{PrettyDurationMessage.create(diff)} !\nSelf worth affirmed!"
+
+      diff < 0 ->
+        "I made things slower by #{PrettyDurationMessage.create(diff)}. \nThis is a sad day for me"
+
+      diff == 0 ->
+        "I made no difference? \nHow unsatisfying"
+    end
   end
 
-  defp time_run(command_line_args, run_name, timings) do
+  defp time_serial_run(command_line_args, timings) do
+    debug_run_result =
+      Run.main(command_line_args, fn setup ->
+        setup
+        |> put_in([:setup, :halt_when_done], false)
+        |> put_in([:setup, :mode], :debug)
+      end)
+
+    case debug_run_result do
+      {:ok, %{result: :success, build_pipeline: build_pipeline}} ->
+        runtime =
+          Enum.reduce(build_pipeline, 0, fn %{duration_in_microseconds: duration_in_microseconds},
+                                            runtime ->
+            runtime + duration_in_microseconds
+          end)
+
+        {:ok, Map.put(timings, :serially, runtime)}
+
+      _ ->
+        IO.inspect("1")
+        :error
+    end
+  end
+
+  defp time_build_pipeline_run(command_line_args, timings) do
     start_time = DateTime.utc_now()
     run_result = System.cmd(bp_binary(), ["run" | command_line_args])
 
-    {_, exit_code} = run_result
+    {output, exit_code} = run_result
 
     if exit_code == 0 do
       end_time = DateTime.utc_now()
       timing = DateTime.diff(end_time, start_time, :microsecond)
-      {:ok, Map.put(timings, run_name, timing)}
+      {:ok, Map.put(timings, :build_pipeline, timing)}
     else
+      puts("Couldn't analyse self worth because a run failed!")
+      puts(output)
       :error
     end
   end

@@ -26,6 +26,7 @@ defmodule BuildPipeline.Run do
     case setup.setup.mode do
       {:analyse_self_worth, command_line_args} ->
         AnalyseSelfWorth.run(command_line_args)
+        {:ok, :noop}
 
       _ ->
         {:ok, setup}
@@ -69,17 +70,6 @@ defmodule BuildPipeline.Run do
     end
   end
 
-  defp maybe_exit(result) do
-    IO.inspect(result)
-
-    if result.halt_when_done == true && Application.get_env(:build_pipeline, :env) !== :test do
-      {:ok, result}
-    else
-      exit_code = if result.result == :success, do: 0, else: 1
-      System.halt(exit_code)
-    end
-  end
-
   defp run_if_preflight_checks_passed({:error, error}) do
     case error do
       {:invalid_config, %Jason.DecodeError{}} ->
@@ -118,12 +108,20 @@ defmodule BuildPipeline.Run do
     end
 
     exit_with_code(1)
-    :error
+  end
+
+  defp maybe_exit(result) do
+    if result.halt_when_done == true && Application.get_env(:build_pipeline, :env) !== :test do
+      exit_code = if result.result == :success, do: 0, else: 1
+      System.halt(exit_code)
+    else
+      {:ok, result}
+    end
   end
 
   def exit_with_code(exit_code) do
     if Application.get_env(:build_pipeline, :env) == :test do
-      :ok
+      if exit_code == 0, do: :ok, else: :error
     else
       System.halt(exit_code)
     end

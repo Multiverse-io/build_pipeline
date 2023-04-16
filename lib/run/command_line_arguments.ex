@@ -63,7 +63,7 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     end
   end
 
-  #TODO add tests for args incompatible with --analyse_self_worth
+  # TODO add tests for args incompatible with --analyse_self_worth
   defp acc_setup_from_cli_args(setup, command_line_args) do
     case analyse_self_worth(command_line_args) do
       {true, command_line_args} ->

@@ -18,7 +18,7 @@ defmodule BuildPipeline.RunTest do
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning"
@@ -56,7 +56,7 @@ defmodule BuildPipeline.RunTest do
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning",
@@ -174,7 +174,7 @@ defmodule BuildPipeline.RunTest do
 
       File.rm(previous_run_result_file)
 
-      :ok =
+      {:ok, _} =
         Run.main([
           "--cwd",
           "./example_projects/complex_yet_functioning"
@@ -191,7 +191,7 @@ defmodule BuildPipeline.RunTest do
 
       File.rm(previous_run_result_file)
 
-      :ok =
+      {:ok, _} =
         Run.main([
           "--cwd",
           "./example_projects/complex_and_failing",
@@ -230,7 +230,7 @@ defmodule BuildPipeline.RunTest do
                }
              ]
 
-      :ok =
+      {:ok, _} =
         Run.main([
           "--cwd",
           "./example_projects/complex_and_failing",
@@ -325,7 +325,7 @@ defmodule BuildPipeline.RunTest do
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning",
@@ -346,7 +346,7 @@ defmodule BuildPipeline.RunTest do
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning"
@@ -364,14 +364,6 @@ defmodule BuildPipeline.RunTest do
       Application.put_env(:build_pipeline, :print_runner_output, true)
       EnvVarsSystemMock.setup()
 
-      # TODO delete the double running
-      assert :ok ==
-               Run.main([
-                 "--cwd",
-                 "./example_projects/complex_yet_functioning",
-                 "--analyse-self-worth"
-               ])
-
       output =
         capture_io(fn ->
           assert :ok ==
@@ -382,8 +374,8 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      build_pipeline_regex = ~r|build_pipeline runtime with parallelism = [0-9].*|
-      serial_regex = ~r|build_pipeline runtime without parallelism = [0-9].*|
+      build_pipeline_regex = ~r|build_pipeline runtime = [0-9].*|
+      serial_regex = ~r|serial runtime = [0-9].*|
 
       assert Regex.match?(build_pipeline_regex, output)
       assert Regex.match?(serial_regex, output)

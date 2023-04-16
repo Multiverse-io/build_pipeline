@@ -13,7 +13,7 @@ defmodule BuildPipelineTest do
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    BuildPipeline.main([
                      "run",
                      "--cwd",
