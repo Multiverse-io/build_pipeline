@@ -1,4 +1,5 @@
 defmodule BuildPipeline.Run.PrettyDurationMessage do
+  # TODO deal with negative numbers properly!
   def create(duration_in_microseconds) do
     cond do
       duration_in_microseconds < 1000 ->
