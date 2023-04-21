@@ -3,6 +3,7 @@ defmodule BuildPipeline.RunTest do
   use Mimic
   import ExUnit.CaptureIO
   alias BuildPipeline.Run
+  alias BuildPipeline.Run.AnalyseSelfWorth.RunSecondBuildPipelineInstance
   alias BuildPipeline.Run.Support.EnvVarsSystemMock
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
@@ -358,11 +359,15 @@ defmodule BuildPipeline.RunTest do
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
 
+    #TODO turn this into an end to end test that uses bp_dev as the binary (so only run it when bp_dev's been created)
     test "--analyse-self-worth mode!" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
       EnvVarsSystemMock.setup()
+
+      # Mimic.copy(RunSecondBuildPipelineInstance)
+      # Mimic.expect(RunSecondBuildPipelineInstance, :run, fn args -> {0, "horray"} end)
 
       output =
         capture_io(fn ->
