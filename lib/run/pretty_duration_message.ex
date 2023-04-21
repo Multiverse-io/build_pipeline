@@ -1,18 +1,27 @@
 defmodule BuildPipeline.Run.PrettyDurationMessage do
-  # TODO deal with negative numbers properly!
   def create(duration_in_microseconds) do
+    {sign, duration_in_microseconds} = modulus(duration_in_microseconds)
+
     cond do
       duration_in_microseconds < 1000 ->
-        "#{duration_in_microseconds} μs"
+        "#{sign}#{duration_in_microseconds} μs"
 
       duration_in_microseconds < 1_000_000 ->
-        "#{round(duration_in_microseconds / 1000)} ms"
+        "#{sign}#{round(duration_in_microseconds / 1000)} ms"
 
       duration_in_microseconds < 60_000_000 ->
-        "#{Float.round(duration_in_microseconds / 1_000_000, 1)} s"
+        "#{sign}#{Float.round(duration_in_microseconds / 1_000_000, 1)} s"
 
       true ->
-        "#{Float.round(duration_in_microseconds / 60_000_000, 1)} min"
+        "#{sign}#{Float.round(duration_in_microseconds / 60_000_000, 1)} min"
+    end
+  end
+
+  defp modulus(duration_in_microseconds) do
+    if duration_in_microseconds < 0 do
+      {"-", -duration_in_microseconds}
+    else
+      {"", duration_in_microseconds}
     end
   end
 end

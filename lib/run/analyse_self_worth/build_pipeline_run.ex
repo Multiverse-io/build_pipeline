@@ -7,7 +7,7 @@ defmodule BuildPipeline.Run.AnalyseSelfWorth.BuildPipelineRun do
     if exit_code == 0 do
       {:ok, DateTime.diff(end_time, start_time, :microsecond)}
     else
-      {:error, {:build_pipeline_run_failed, output}}
+      {:error, output}
     end
   end
 

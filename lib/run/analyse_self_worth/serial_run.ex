@@ -7,6 +7,5 @@ defmodule BuildPipeline.Run.AnalyseSelfWorth.SerialRun do
       |> put_in([:setup, :halt_when_done], false)
       |> put_in([:setup, :mode], :debug)
     end)
-    |> IO.inspect()
   end
 end

@@ -1,14 +1,15 @@
 defmodule BuildPipeline.Run.AnalyseSelfWorthTest do
   use ExUnit.Case, async: true
+  import ExUnit.CaptureIO
   alias Mimic
   alias BuildPipeline.Run.Builders.RunnersBuilder
   alias BuildPipeline.Run.AnalyseSelfWorth
   alias BuildPipeline.Run.AnalyseSelfWorth.{BuildPipelineRun, SerialRun}
 
   describe "run/1" do
-    test "when the serial & bp runs succeed, add up the serial step runs & return the build_pipeline runtime" do
+    test "when the serial & bp runs succeed, and build_pipeline made it faster, print a happy result" do
       Mimic.copy(BuildPipelineRun)
-      Mimic.stub(BuildPipelineRun, :run, fn _ -> {:ok, 123_456} end)
+      Mimic.stub(BuildPipelineRun, :run, fn _ -> {:ok, 1} end)
 
       Mimic.copy(SerialRun)
 
@@ -24,23 +25,91 @@ defmodule BuildPipeline.Run.AnalyseSelfWorthTest do
          }}
       end)
 
-      assert {:ok,
-              %{
-                serially_in_microseconds: 7,
-                build_pipeline_in_microseconds: 123_456
-              }} == AnalyseSelfWorth.run([])
+      output =
+        capture_io(fn ->
+          assert {:ok,
+                  %{
+                    serially_in_microseconds: 7,
+                    build_pipeline_in_microseconds: 1
+                  }} == AnalyseSelfWorth.run([])
+        end)
+
+      assert output =~ "I made things faster to the tune of 6 μs"
     end
 
-    # TODO put an error msg to the user if this happens
-    test "if the build_pipeline run fails, return error" do
+    test "when the serial & bp runs succeed, and build_pipeline made it slower, print a sad result" do
       Mimic.copy(BuildPipelineRun)
-      Mimic.stub(BuildPipelineRun, :run, fn _ -> :error end)
+      Mimic.stub(BuildPipelineRun, :run, fn _ -> {:ok, 999_999} end)
+
       Mimic.copy(SerialRun)
 
-      assert :error == AnalyseSelfWorth.run([])
+      Mimic.stub(SerialRun, :run, fn _ ->
+        {:ok,
+         %{
+           build_pipeline: [
+             RunnersBuilder.build_complete() |> RunnersBuilder.with_duration_in_microseconds(1),
+             RunnersBuilder.build_complete() |> RunnersBuilder.with_duration_in_microseconds(2),
+             RunnersBuilder.build_complete() |> RunnersBuilder.with_duration_in_microseconds(4)
+           ],
+           result: :success
+         }}
+      end)
+
+      output =
+        capture_io(fn ->
+          assert {:ok,
+                  %{
+                    serially_in_microseconds: 7,
+                    build_pipeline_in_microseconds: 999_999
+                  }} == AnalyseSelfWorth.run([])
+        end)
+
+      assert output =~ "I made things slower by 1000 ms"
     end
 
-    # TODO put an error msg to the user if this happens
+    test "when the serial & bp runs succeed, and build_pipeline took just as long as running it serially, print a nuanced result" do
+      Mimic.copy(BuildPipelineRun)
+      Mimic.stub(BuildPipelineRun, :run, fn _ -> {:ok, 7} end)
+
+      Mimic.copy(SerialRun)
+
+      Mimic.stub(SerialRun, :run, fn _ ->
+        {:ok,
+         %{
+           build_pipeline: [
+             RunnersBuilder.build_complete() |> RunnersBuilder.with_duration_in_microseconds(1),
+             RunnersBuilder.build_complete() |> RunnersBuilder.with_duration_in_microseconds(2),
+             RunnersBuilder.build_complete() |> RunnersBuilder.with_duration_in_microseconds(4)
+           ],
+           result: :success
+         }}
+      end)
+
+      output =
+        capture_io(fn ->
+          assert {:ok,
+                  %{
+                    serially_in_microseconds: 7,
+                    build_pipeline_in_microseconds: 7
+                  }} == AnalyseSelfWorth.run([])
+        end)
+
+      assert output =~ "I made no difference? \nHow unsatisfying"
+    end
+
+    test "if the build_pipeline run fails, return error" do
+      Mimic.copy(BuildPipelineRun)
+
+      Mimic.stub(BuildPipelineRun, :run, fn _ -> {:error, "bad output"} end)
+
+      output =
+        capture_io(fn ->
+          assert :error == AnalyseSelfWorth.run([])
+        end)
+
+      assert output =~ "Failed to analyse self worth because the run failed:\n\"bad output\""
+    end
+
     test "if the serial run fails, return error" do
       Mimic.copy(BuildPipelineRun)
       Mimic.stub(BuildPipelineRun, :run, fn _ -> {:ok, 123_456} end)
@@ -59,7 +128,9 @@ defmodule BuildPipeline.Run.AnalyseSelfWorthTest do
          }}
       end)
 
-      assert :error == AnalyseSelfWorth.run([])
+      output = capture_io(fn -> assert :error == AnalyseSelfWorth.run([]) end)
+
+      assert output =~ "Failed to analyse self worth because the run failed"
     end
   end
 end
