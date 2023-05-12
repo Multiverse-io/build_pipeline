@@ -126,7 +126,7 @@ And you're away!
 
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
-Once you're confident your build is running successfully as it should, I reccomand adding `bp` to your path and running `bp run --analyse-self-worth`, which will tell you how much faster the build is with `bp` vs just running each build step one at a time. See the section about this below for more details.
+Once you're confident your build is running successfully as it should, I reccommend adding `bp` to your PATH and running `bp run --analyse-self-worth`, which will tell you how much faster the build is with `bp` vs just running each build step one at a time. See the section about this below for more details.
 
 ## Reccomendations on how to run build_pipeline on CI vs localy
 
@@ -198,14 +198,14 @@ _how much time does build_pipeline save vs. just running the build steps one at 
 
 It requires `bp` to be in your PATH, and it runs all build steps twice.
 
-1) With build_pipeline paralleism as definied in the config file
-2) Without build_pipeline paralleism; running each step one at a time.
+1) With build_pipeline parallelism as defined in the config file
+2) Without build_pipeline parallelism; running each step one at a time.
 
 It times how long 1) and 2) take, and outputs how long each took.
 
-Note that to time 1), we include the time it takes to startup `bp` itself. This is achieved by the initial `bp` instance actually starting up a 2nd `bp` instance to do a full build_pipeline run (this is why `bp` needs to be in your PATH, so that it knows where to find itself)
+Note that to time 1), we include the time it takes to startup `bp` itself. This is achieved by the initial `bp` instance actually starting up a 2nd `bp` instance to do a full build_pipeline run (this is why `bp` needs to be in your PATH, so that it knows where to find itself).
 
-For 2) we still run the steps with `bp`, but we run each build step one at a time & report only the sum of the time it took each build step. We don't include additional time added by `bp` overhead by doing this in an attempt to be as honest as we can!
+For 2) we still run the steps with `bp`, but we run each build step one at a time & report only the sum of the time it took run each build step. We don't include additional time added by `bp` overhead by doing this in an attempt to be as honest as we can!
 
 Hopefully you'll see a message saying how much parallism sped up your build!
 
