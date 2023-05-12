@@ -205,7 +205,7 @@ It times how long 1) and 2) take, and outputs how long each took.
 
 Note that to time 1), we include the time it takes to startup `bp` itself. This is achieved by the initial `bp` instance actually starting up a 2nd `bp` instance to do a full build_pipeline run (this is why `bp` needs to be in your PATH, so that it knows where to find itself)
 
-For 2) we still run the steps with `bp`, but we report only the sum of the time it took each build step to run. We don't include additional time added by `bp` overhead by doing this in an attempt to be as honest as we can!
+For 2) we still run the steps with `bp`, but we run each build step one at a time & report only the sum of the time it took each build step. We don't include additional time added by `bp` overhead by doing this in an attempt to be as honest as we can!
 
 Hopefully you'll see a message saying how much parallism sped up your build!
 
