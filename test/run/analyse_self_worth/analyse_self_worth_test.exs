@@ -107,7 +107,7 @@ defmodule BuildPipeline.Run.AnalyseSelfWorthTest do
           assert :error == AnalyseSelfWorth.run([])
         end)
 
-      assert output =~ "Failed to analyse self worth because the run failed:\n\"bad output\""
+      assert output =~ "Failed to analyse self worth because the run failed:\nbad output"
     end
 
     test "if the serial run fails, return error" do

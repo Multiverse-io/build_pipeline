@@ -27,7 +27,8 @@ defmodule BuildPipeline.Run.AnalyseSelfWorth do
          %{build_pipeline_in_microseconds: build_pipeline, serially_in_microseconds: serially}}
 
       {:error, error} ->
-        IO.puts("Failed to analyse self worth because the run failed:\n#{inspect(error)}")
+        IO.puts("Failed to analyse self worth because the run failed:\n#{error}")
+
         Run.exit_with_code(1)
 
       _error ->
