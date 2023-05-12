@@ -92,6 +92,14 @@
     ]
   },
   {
+    "buildStepName": "analyse_self_worth_test",
+    "commandType": "script",
+    "command": "analyse_self_worth_test",
+    "dependsOn": [
+      "MIX_ENV=dev mix escript.build"
+    ]
+  },
+  {
     "buildStepName": "escriptBuild",
     "commandType": "shellCommand",
     "command": "mix escript.build",
@@ -99,7 +107,8 @@
       "mix test --color",
       "end_to_end_test",
       "exit_code_correctness_end_to_end_test",
-      "preflight_checks_return_non_zero_exit_code_test"
+      "preflight_checks_return_non_zero_exit_code_test",
+      "analyse_self_worth_test"
     ],
     "envVars": [
       {

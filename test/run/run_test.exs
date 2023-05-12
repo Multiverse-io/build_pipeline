@@ -3,8 +3,8 @@ defmodule BuildPipeline.RunTest do
   use Mimic
   import ExUnit.CaptureIO
   alias BuildPipeline.Run
+  alias BuildPipeline.Run.Support.FetchEnvVarsMock
   alias BuildPipeline.Run.AnalyseSelfWorth.RunSecondBuildPipelineInstance
-  alias BuildPipeline.Run.Support.EnvVarsSystemMock
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
@@ -15,7 +15,7 @@ defmodule BuildPipeline.RunTest do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       output =
         capture_io(fn ->
@@ -50,7 +50,7 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "with mode = debug, can show runner output on the screen & run to completion" do
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
@@ -168,7 +168,7 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when save-result (sr) is NOT set, we don't save the result to file" do
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       previous_run_result_file =
         "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
@@ -185,7 +185,7 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when from failed (ff) is set, save the result to file, when running it again, read the file & skip the previously successful build steps" do
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       previous_run_result_file =
         "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
@@ -322,7 +322,7 @@ defmodule BuildPipeline.RunTest do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       output =
         capture_io(fn ->
@@ -343,7 +343,7 @@ defmodule BuildPipeline.RunTest do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       output =
         capture_io(fn ->
@@ -359,15 +359,13 @@ defmodule BuildPipeline.RunTest do
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end
 
-    #TODO turn this into an end to end test that uses bp_dev as the binary (so only run it when bp_dev's been created)
     test "--analyse-self-worth mode!" do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-      EnvVarsSystemMock.setup()
-
-      # Mimic.copy(RunSecondBuildPipelineInstance)
-      # Mimic.expect(RunSecondBuildPipelineInstance, :run, fn args -> {0, "horray"} end)
+      FetchEnvVarsMock.setup()
+      Mimic.copy(RunSecondBuildPipelineInstance)
+      Mimic.stub(RunSecondBuildPipelineInstance, :run, fn _args -> {"horray", 0} end)
 
       output =
         capture_io(fn ->

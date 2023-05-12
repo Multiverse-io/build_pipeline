@@ -3,12 +3,7 @@ defmodule BuildPipeline.Run.AnalyseSelfWorth.RunSecondBuildPipelineInstance do
     System.cmd(bp_binary(), args)
   end
 
-  #TODO use bp_dev in test & bp everywhere else?
   defp bp_binary do
-    if Application.get_env(:build_pipeline, :env) == :test do
-      "./bp"
-    else
-      "bp"
-    end
+    Application.get_env(:build_pipeline, :bp_binary)
   end
 end

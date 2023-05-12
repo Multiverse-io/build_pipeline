@@ -1,0 +1,12 @@
+#!/bin/bash
+
+
+#./bp_dev run --cwd example_projects/complex_yet_functioning --analyse-self-worth
+output=$(./bp_dev run --cwd example_projects/complex_yet_functioning --analyse-self-worth)
+test_exit_code=$?
+
+if [[ $output == *"Self Worth Analysis"* ]]; then
+  exit $test_exit_code
+else
+  exit 1
+fi
