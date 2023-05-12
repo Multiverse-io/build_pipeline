@@ -188,7 +188,7 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 
 `--stats` - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. See below for more info. Cannot be set with --debug
 
-`--analyse-self-worth` - Runs the full build pipeline twice. Once with full parallism including build_pipeine overhead , and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! See below section for more details.
+`--analyse-self-worth` - Runs the full build pipeline twice. Once with full parallism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! See below section for more details.
 
 ### Analyse Self Worth
 
