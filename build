@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 if ! [ -x "$(command -v bp)" ]; then
     echo "Error: bp is not installed."
     echo "See README on how to install it"
