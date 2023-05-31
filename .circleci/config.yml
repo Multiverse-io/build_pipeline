@@ -54,6 +54,16 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install build_pipeline
+          command: |
+            build_pipeline_version="$(cat .tool-versions | awk '/build_pipeline/{print $2}')"
+            build_pipeline_release_url="https://github.com/Multiverse-io/build_pipeline/releases/download/v$build_pipeline_version/bp"
+            echo "Downloading from $build_pipeline_release_url"
+            curl -fLo bp $build_pipeline_release_url
+            chmod +x bp
+            ./bp --version
+            mv bp /usr/local/bin/
+      - run:
           command: ./build --verbose
           environment:
             TERM: xterm-256color
