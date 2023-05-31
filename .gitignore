@@ -30,3 +30,4 @@ build_pipeline/previous_run_result.json
 example_projects/**/previous_run_result.json
 example_projects/test_project/**
 bp_dev
+build_report.json

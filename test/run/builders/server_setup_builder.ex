@@ -9,6 +9,7 @@ defmodule BuildPipeline.Run.Builders.ServerSetupBuilder do
         save_result: false,
         run_from_failed: false,
         show_stats: false,
+        json_report: false,
         halt_when_done: true
       }
     }

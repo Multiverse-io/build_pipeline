@@ -114,6 +114,7 @@ defmodule BuildPipeline.Run do
     if result.halt_when_done == true && Application.get_env(:build_pipeline, :env) !== :test do
       exit_code = if result.result == :success, do: 0, else: 1
       System.halt(exit_code)
+      # nil
     else
       {:ok, result}
     end

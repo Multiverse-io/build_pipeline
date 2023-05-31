@@ -11,6 +11,7 @@ defmodule BuildPipeline.Run.Builders.ServerStateBuilder do
       mode: :normal,
       save_result: false,
       show_stats: false,
+      json_report: false,
       cwd: "."
     }
   end

@@ -4,10 +4,11 @@ defmodule BuildPipeline.Run.Server do
   alias BuildPipeline.Run.{
     BuildStepRunner,
     Complete,
+    JsonReport,
     PreviousRunResultFileWriter,
     Statistics,
-    TerminalPrinter,
     TerminalMessages,
+    TerminalPrinter,
     WhichBuildStepsCanRun
   }
 
@@ -36,6 +37,7 @@ defmodule BuildPipeline.Run.Server do
         terminal_width: terminal_width,
         save_result: save_result,
         show_stats: show_stats,
+        json_report: json_report,
         halt_when_done: halt_when_done
       }
     } = setup
@@ -50,6 +52,7 @@ defmodule BuildPipeline.Run.Server do
       cwd: cwd,
       save_result: save_result,
       show_stats: show_stats,
+      json_report: json_report,
       halt_when_done: halt_when_done
     }
 
@@ -195,6 +198,7 @@ defmodule BuildPipeline.Run.Server do
 
   defp run_post_build(state, runner_pid, exit_code) do
     Statistics.print(state)
+    JsonReport.generate(state)
     PreviousRunResultFileWriter.write(state, runner_pid, exit_code)
   end
 end
