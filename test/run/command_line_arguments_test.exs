@@ -2,44 +2,11 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
   use ExUnit.Case, async: true
   alias BuildPipeline.Run.CommandLineArguments
 
-  @usage_instructions """
-  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra] [--stats]
+  @usage_instructions CommandLineArguments.usage_instructions()
 
-  --verbose  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
+  @bad_args_error CommandLineArguments.bad_args_error() <> @usage_instructions
 
-  --debug    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose. If you're scratching your head wondering what's going wrong, this flag is reccommended.
-
-  --cwd path - the path in which to look for the `build_pipeline` directory which must contain `config.json` and build `scripts` folder. Defaults to "."
-
-  --ff       - from-failed: saves the results of this run to "{your cwd}/build_pipeline/previous_run_result.json", and if sed file already exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. Cannot be set with --ra. from-failed is smart enough to know that if all the build steps we were about to run were going to be skipped - to instead run all the steps.
-
-  --ra       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
-
-  --stats    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
-
-  --analyse-self-worth    - Runs the full build pipeline twice. Once with full parallism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! Basically every other command line argument except --cwd is incompatible with this one.
-  """
-
-  @bad_args_error """
-                  I was given some arguments I don't understand.
-                  See below for the arguments I accept
-
-                  """ <> @usage_instructions
-
-  @incompatible_args_error """
-                           I was given some incompatible arguments.
-
-                           --ff cannot be set with --ra
-                           --debug cannot be set with --verbose
-                           --debug cannot be set with --stats
-
-                           --analyse-self-worth cannot be set with any of the following
-                              --verbose
-                              --debug
-                              --ff
-                              --ra
-                              --stats
-                           """ <> @usage_instructions
+  @incompatible_args_error CommandLineArguments.incompatible_args_error() <> @usage_instructions
 
   describe "parse/1" do
     test "given no overlapping existing setup & no command line args, puts the default setup" do
@@ -51,6 +18,7 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 run_from_failed: false,
                 a: 1,
                 show_stats: false,
+                json_report: false,
                 halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{a: 1}, [])
@@ -64,6 +32,7 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 save_result: true,
                 run_from_failed: true,
                 show_stats: false,
+                json_report: false,
                 halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{save_result: false, run_from_failed: false}, [
@@ -79,6 +48,7 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 save_result: false,
                 run_from_failed: false,
                 show_stats: false,
+                json_report: false,
                 halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{}, [])
@@ -137,9 +107,18 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
       assert {:ok, %{show_stats: true}} = CommandLineArguments.parse(%{}, ["--stats"])
     end
 
+    test "with --json-report, returns json_report: true" do
+      assert {:ok, %{json_report: true}} = CommandLineArguments.parse(%{}, ["--json-report"])
+    end
+
     test "with --stats and --debug, returns an error because these args are incompatible" do
       assert {:error, {:bad_arguments, @incompatible_args_error}} =
                CommandLineArguments.parse(%{}, ["--debug", "--stats", "--cwd", "cool/path"])
+    end
+
+    test "with --json-report and --debug, returns an error because these args are incompatible" do
+      assert {:error, {:bad_arguments, @incompatible_args_error}} =
+               CommandLineArguments.parse(%{}, ["--debug", "--json-report", "--cwd", "cool/path"])
     end
 
     test "with --analyse-self-worth, returns it as the mode" do
@@ -164,6 +143,9 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
 
       assert {:error, {:bad_arguments, @incompatible_args_error}} ==
                CommandLineArguments.parse(%{}, ["--analyse-self-worth", "--stats"])
+
+      assert {:error, {:bad_arguments, @incompatible_args_error}} ==
+               CommandLineArguments.parse(%{}, ["--analyse-self-worth", "--json-report"])
     end
 
     test "with --analyse-self-worth set, save_result & run_from_failed get set to faluse even if previously true" do

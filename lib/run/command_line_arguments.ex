@@ -6,6 +6,7 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     save_result: false,
     run_from_failed: false,
     show_stats: false,
+    json_report: false,
     halt_when_done: true
   }
   @cwd "--cwd"
@@ -14,50 +15,61 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   @from_failed "--ff"
   @run_all "--ra"
   @stats "--stats"
+  @json_report "--json-report"
   @analyse_self_worth "--analyse-self-worth"
   # keep usage_instructions in sync with the README.md file
-  @usage_instructions """
-  usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra] [--stats]
 
-  --verbose  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
+  def usage_instructions do
+    """
+    usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra] [--stats] [--json-report]
 
-  --debug    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose. If you're scratching your head wondering what's going wrong, this flag is reccommended.
+    --verbose  - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
 
-  --cwd path - the path in which to look for the `build_pipeline` directory which must contain `config.json` and build `scripts` folder. Defaults to "."
+    --debug    - build steps run one at a time and their output is printed to the terminal in real time. Cannot be set with --verbose. If you're scratching your head wondering what's going wrong, this flag is reccommended.
 
-  --ff       - from-failed: saves the results of this run to "{your cwd}/build_pipeline/previous_run_result.json", and if sed file already exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. Cannot be set with --ra. from-failed is smart enough to know that if all the build steps we were about to run were going to be skipped - to instead run all the steps.
+    --cwd path - the path in which to look for the `build_pipeline` directory which must contain `config.json` and build `scripts` folder. Defaults to "."
 
-  --ra       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
+    --ff       - from-failed: saves the results of this run to "{your cwd}/build_pipeline/previous_run_result.json", and if sed file already exists, then only build steps that were either failed or not started from the previous build will run. Previously successful build steps will not be run. Cannot be set with --ra. from-failed is smart enough to know that if all the build steps we were about to run were going to be skipped - to instead run all the steps.
 
-  --stats    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
+    --ra       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
 
-  --analyse-self-worth    - Runs the full build pipeline twice. Once with full parallism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! Basically every other command line argument except --cwd is incompatible with this one.
-  """
+    --stats    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
 
-  @incompatible_args_error """
-  I was given some incompatible arguments.
+    --json-report - creates a json report including all the steps run, their timings and whether they succeeded or not. Cannot be set with --debug
 
-  --ff cannot be set with --ra
-  --debug cannot be set with --verbose
-  --debug cannot be set with --stats
+    --analyse-self-worth    - Runs the full build pipeline twice. Once with full parallism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! Basically every other command line argument except --cwd is incompatible with this one.
+    """
+  end
 
-  --analyse-self-worth cannot be set with any of the following
-     --verbose
-     --debug
-     --ff
-     --ra
-     --stats
-  """
+  def incompatible_args_error do
+    """
+    I was given some incompatible arguments.
 
-  @bad_args_error """
-  I was given some arguments I don't understand.
-  See below for the arguments I accept
+    --ff cannot be set with --ra
+    --debug cannot be set with --verbose
+    --debug cannot be set with --stats
 
-  """
+    --analyse-self-worth cannot be set with any of the following
+       --verbose
+       --debug
+       --ff
+       --ra
+       --stats
+       --json-report
+    """
+  end
+
+  def bad_args_error do
+    """
+     I was given some arguments I don't understand.
+     See below for the arguments I accept
+
+    """
+  end
 
   def parse(setup, command_line_args) do
     if incompatible_args?(command_line_args) do
-      {:error, {:bad_arguments, @incompatible_args_error <> @usage_instructions}}
+      {:error, {:bad_arguments, incompatible_args_error() <> usage_instructions()}}
     else
       setup_from_cli_args(setup, command_line_args)
     end
@@ -66,7 +78,7 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   defp setup_from_cli_args(setup, command_line_args) do
     case setup |> put_default_setup() |> acc_setup_from_cli_args(command_line_args) do
       {:ok, setup} -> {:ok, setup}
-      :error -> {:error, {:bad_arguments, @bad_args_error <> @usage_instructions}}
+      :error -> {:error, {:bad_arguments, bad_args_error() <> usage_instructions()}}
     end
   end
 
@@ -123,6 +135,10 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     {:ok, Map.put(setup, :show_stats, true)}
   end
 
+  defp put_setup_from_singular_cli_arg(setup, @json_report) do
+    {:ok, Map.put(setup, :json_report, true)}
+  end
+
   defp put_setup_from_singular_cli_arg(setup, @from_failed) do
     setup =
       setup
@@ -136,14 +152,21 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     :error
   end
 
+  @incompatible_args %{
+    @debug => [@verbose, @stats, @json_report],
+    @run_all => [@from_failed],
+    @analyse_self_worth => [@verbose, @debug, @from_failed, @run_all, @stats, @json_report]
+  }
+
   defp incompatible_args?(command_line_args) do
-    (@debug in command_line_args and @verbose in command_line_args) or
-      (@run_all in command_line_args and @from_failed in command_line_args) or
-      (@debug in command_line_args and @stats in command_line_args) or
-      (@analyse_self_worth in command_line_args and
-         (@verbose in command_line_args or @debug in command_line_args or
-            @from_failed in command_line_args or @run_all in command_line_args or
-            @stats in command_line_args))
+    {_arg, incompatible} =
+      Enum.find(@incompatible_args, {nil, []}, fn {arg, _incompatible} ->
+        arg in command_line_args
+      end)
+
+    Enum.any?(incompatible, fn arg ->
+      arg in command_line_args
+    end)
   end
 
   defp put_default_setup(setup) do
