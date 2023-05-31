@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if ! [ -x "$(command -v bp)" ]; then
-    echo "Error: bp is not installed."
-    echo "See README on how to install it"
-    exit 1
+if [ ! -f ./bp ]; then
+    echo "./bp not found. Boostrapping build pipeline..."
+    mix deps.get
+    env MIX_ENV=prod mix escript.build
 fi
 
-bp run $@
+./bp run $@
