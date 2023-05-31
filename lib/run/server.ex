@@ -145,8 +145,7 @@ defmodule BuildPipeline.Run.Server do
         |> TerminalMessages.failed_output(result)
         |> TerminalPrinter.runner_update(state)
 
-        Statistics.print(state)
-        PreviousRunResultFileWriter.write(state, runner_pid, exit_code)
+        run_post_build(state, runner_pid, exit_code)
         {:stop, :normal, state}
     end
   end
@@ -162,8 +161,7 @@ defmodule BuildPipeline.Run.Server do
 
   defp finished_if_all_runners_done(state, runner_pid, exit_code) do
     if all_runners_done?(state) do
-      Statistics.print(state)
-      PreviousRunResultFileWriter.write(state, runner_pid, exit_code)
+      run_post_build(state, runner_pid, exit_code)
       {:stop, :normal, state}
     else
       {:noreply, state}
@@ -193,5 +191,10 @@ defmodule BuildPipeline.Run.Server do
 
       Map.put(runners, runner_pid, build_step)
     end)
+  end
+
+  defp run_post_build(state, runner_pid, exit_code) do
+    Statistics.print(state)
+    PreviousRunResultFileWriter.write(state, runner_pid, exit_code)
   end
 end
