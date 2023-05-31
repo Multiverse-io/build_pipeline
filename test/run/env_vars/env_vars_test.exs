@@ -2,13 +2,13 @@ defmodule BuildPipeline.Run.EnvVarsTest do
   use ExUnit.Case, async: true
   use Mimic
   alias BuildPipeline.Run.{Const, EnvVars}
-  alias BuildPipeline.Run.Support.EnvVarsSystemMock
+  alias BuildPipeline.Run.Support.FetchEnvVarsMock
 
   @from_failed Const.from_failed_env_var_name()
 
   describe "read/1" do
     test "when from file is a nonsense value, returns error" do
-      EnvVarsSystemMock.setup(from_failed: "something nonsenseical")
+      FetchEnvVarsMock.setup(from_failed: "something nonsenseical")
 
       error = """
       The loaded environment variable was
@@ -22,17 +22,17 @@ defmodule BuildPipeline.Run.EnvVarsTest do
     end
 
     test "when from_failed = false" do
-      EnvVarsSystemMock.setup(from_failed: "false")
+      FetchEnvVarsMock.setup(from_failed: "false")
       assert {:ok, %{run_from_failed: false, save_result: false}} == EnvVars.read()
     end
 
     test "when from_failed = true" do
-      EnvVarsSystemMock.setup(from_failed: "true")
+      FetchEnvVarsMock.setup(from_failed: "true")
       assert {:ok, %{run_from_failed: true, save_result: true}} == EnvVars.read()
     end
 
     test "when from_failed = unset" do
-      EnvVarsSystemMock.setup(from_failed: nil)
+      FetchEnvVarsMock.setup(from_failed: nil)
       assert {:ok, %{}} == EnvVars.read()
     end
   end

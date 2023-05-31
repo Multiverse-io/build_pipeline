@@ -8,7 +8,8 @@ defmodule BuildPipeline.Run.Builders.ServerSetupBuilder do
         terminal_width: 156,
         save_result: false,
         run_from_failed: false,
-        show_stats: false
+        show_stats: false,
+        halt_when_done: true
       }
     }
   end

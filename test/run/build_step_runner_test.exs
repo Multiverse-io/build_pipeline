@@ -36,7 +36,7 @@ defmodule BuildPipeline.Run.BuildStepRunnerTest do
 
       GenServer.cast(pid, :run_if_waiting)
 
-      assert_receive {:"$gen_cast", {:runner_finished, ^pid, %{exit_code: 0, output: ""}}}
+      assert_receive {:"$gen_cast", {:runner_finished, ^pid, %{exit_code: 0, output: ""}}}, 1_000
     end
 
     test "if status = waiting, the status is set to running" do

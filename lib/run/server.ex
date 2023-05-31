@@ -35,7 +35,8 @@ defmodule BuildPipeline.Run.Server do
         cwd: cwd,
         terminal_width: terminal_width,
         save_result: save_result,
-        show_stats: show_stats
+        show_stats: show_stats,
+        halt_when_done: halt_when_done
       }
     } = setup
 
@@ -48,7 +49,8 @@ defmodule BuildPipeline.Run.Server do
       mode: mode,
       cwd: cwd,
       save_result: save_result,
-      show_stats: show_stats
+      show_stats: show_stats,
+      halt_when_done: halt_when_done
     }
 
     state
@@ -86,7 +88,7 @@ defmodule BuildPipeline.Run.Server do
     send(parent_pid, {:server_done, parse_result(state)})
   end
 
-  defp parse_result(%{runners: runners}) do
+  defp parse_result(%{runners: runners, halt_when_done: halt_when_done}) do
     build_pipeline =
       runners
       |> Enum.sort(fn {_, %{order: order_1}}, {_, %{order: order_2}} -> order_1 <= order_2 end)
@@ -102,9 +104,9 @@ defmodule BuildPipeline.Run.Server do
       end)
 
     if success? do
-      %{build_pipeline: build_pipeline, result: :success}
+      %{build_pipeline: build_pipeline, result: :success, halt_when_done: halt_when_done}
     else
-      %{build_pipeline: build_pipeline, result: :failure}
+      %{build_pipeline: build_pipeline, result: :failure, halt_when_done: halt_when_done}
     end
   end
 

@@ -126,6 +126,8 @@ And you're away!
 
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
+Once you're confident your build is running successfully as it should, I recommend adding `bp` to your PATH and running `bp run --analyse-self-worth`, which will tell you how much faster the build is with `bp` vs just running each build step one at a time. See the section about this below for more details.
+
 ## Reccomendations on how to run build_pipeline on CI vs localy
 
 ### On CI
@@ -185,6 +187,46 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 `--ra` - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
 
 `--stats` - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. See below for more info. Cannot be set with --debug
+
+`--analyse-self-worth` - Runs the full build pipeline twice. Once with full parallelism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! See below section for more details.
+
+### Analyse Self Worth
+
+If requested via the `--analyse-self-worth` flag, then build_pipeline attempts to answer the question
+
+_how much time does build_pipeline save vs. just running the build steps one at a time?_
+
+It requires `bp` to be in your PATH, and it runs all build steps twice.
+
+1) With build_pipeline parallelism as defined in the config file
+2) Without build_pipeline parallelism; running each step one at a time.
+
+It times how long 1) and 2) take, and outputs how long each took.
+
+Note that to time 1), we include the time it takes to startup `bp` itself. This is achieved by the initial `bp` instance actually starting up a 2nd `bp` instance to do a full build_pipeline run (this is why `bp` needs to be in your PATH, so that it knows where to find itself).
+
+For 2) we still run the steps with `bp`, but we run each build step one at a time & report only the sum of the time it took run each build step. We don't include additional time added by `bp` overhead by doing this in an attempt to be as honest as we can!
+
+Hopefully you'll see a message saying how much parallelism sped up your build!
+
+... otherwise erm... that's awkward. I guess uninstall? :-(
+
+At the time of writing this, running `bp run --analyse-self-worth`, for build_pipeline's own build (how meta) outputs the following
+
+```
+*********************************************************************
+Self Worth Analysis
+*********************************************************************
+
+build_pipeline runtime = 5.6 s
+serial runtime = 9.9 s
+
+I made things faster to the tune of 4.3 s !
+Self worth affirmed!
+*********************************************************************
+```
+
+So build_pipeline has self justification to exist at least!
 
 ### Statistics
 

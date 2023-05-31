@@ -16,6 +16,8 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
   --ra       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
 
   --stats    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
+
+  --analyse-self-worth    - Runs the full build pipeline twice. Once with full parallism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! Basically every other command line argument except --cwd is incompatible with this one.
   """
 
   @bad_args_error """
@@ -31,6 +33,12 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                            --debug cannot be set with --verbose
                            --debug cannot be set with --stats
 
+                           --analyse-self-worth cannot be set with any of the following
+                              --verbose
+                              --debug
+                              --ff
+                              --ra
+                              --stats
                            """ <> @usage_instructions
 
   describe "parse/1" do
@@ -42,7 +50,8 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 save_result: false,
                 run_from_failed: false,
                 a: 1,
-                show_stats: false
+                show_stats: false,
+                halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{a: 1}, [])
     end
@@ -54,7 +63,8 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 mode: :normal,
                 save_result: true,
                 run_from_failed: true,
-                show_stats: false
+                show_stats: false,
+                halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{save_result: false, run_from_failed: false}, [
                  "--ff"
@@ -68,7 +78,8 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
                 mode: :normal,
                 save_result: false,
                 run_from_failed: false,
-                show_stats: false
+                show_stats: false,
+                halt_when_done: true
               }} ==
                CommandLineArguments.parse(%{}, [])
     end
@@ -129,6 +140,37 @@ defmodule BuildPipeline.Run.CommandLineArgumentsTest do
     test "with --stats and --debug, returns an error because these args are incompatible" do
       assert {:error, {:bad_arguments, @incompatible_args_error}} =
                CommandLineArguments.parse(%{}, ["--debug", "--stats", "--cwd", "cool/path"])
+    end
+
+    test "with --analyse-self-worth, returns it as the mode" do
+      assert {:ok,
+              %{
+                mode: {:analyse_self_worth, ["--cwd", "some/dir"]}
+              }} = CommandLineArguments.parse(%{}, ["--cwd", "some/dir", "--analyse-self-worth"])
+    end
+
+    test "with --analyse-self-worth, some other args are not compatible" do
+      assert {:error, {:bad_arguments, @incompatible_args_error}} ==
+               CommandLineArguments.parse(%{}, ["--analyse-self-worth", "--verbose"])
+
+      assert {:error, {:bad_arguments, @incompatible_args_error}} ==
+               CommandLineArguments.parse(%{}, ["--analyse-self-worth", "--debug"])
+
+      assert {:error, {:bad_arguments, @incompatible_args_error}} ==
+               CommandLineArguments.parse(%{}, ["--analyse-self-worth", "--ff"])
+
+      assert {:error, {:bad_arguments, @incompatible_args_error}} ==
+               CommandLineArguments.parse(%{}, ["--analyse-self-worth", "--ra"])
+
+      assert {:error, {:bad_arguments, @incompatible_args_error}} ==
+               CommandLineArguments.parse(%{}, ["--analyse-self-worth", "--stats"])
+    end
+
+    test "with --analyse-self-worth set, save_result & run_from_failed get set to faluse even if previously true" do
+      assert {:ok, %{save_result: false, run_from_failed: false}} =
+               CommandLineArguments.parse(%{save_result: true, run_from_failed: true}, [
+                 "--analyse-self-worth"
+               ])
     end
   end
 end

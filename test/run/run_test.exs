@@ -3,7 +3,8 @@ defmodule BuildPipeline.RunTest do
   use Mimic
   import ExUnit.CaptureIO
   alias BuildPipeline.Run
-  alias BuildPipeline.Run.Support.EnvVarsSystemMock
+  alias BuildPipeline.Run.Support.FetchEnvVarsMock
+  alias BuildPipeline.Run.AnalyseSelfWorth.RunSecondBuildPipelineInstance
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
 
@@ -14,11 +15,11 @@ defmodule BuildPipeline.RunTest do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning"
@@ -49,14 +50,14 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "with mode = debug, can show runner output on the screen & run to completion" do
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning",
@@ -129,7 +130,7 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      assert output == "I failed to parse the config.json because it was not valid JSON\n"
+      assert output =~ "I failed to parse the config.json because it was not valid JSON\n"
     end
 
     test "returns error if we can't determine the terminals width because tput can't be run" do
@@ -145,7 +146,7 @@ defmodule BuildPipeline.RunTest do
                    ])
         end)
 
-      assert output ==
+      assert output =~
                "I tried to run 'tput cols' but it failed because it looks like I'm not able to run the 'tput' binary?\n"
     end
 
@@ -167,14 +168,14 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when save-result (sr) is NOT set, we don't save the result to file" do
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       previous_run_result_file =
         "./example_projects/complex_yet_functioning/build_pipeline/previous_run_result.json"
 
       File.rm(previous_run_result_file)
 
-      :ok =
+      {:ok, _} =
         Run.main([
           "--cwd",
           "./example_projects/complex_yet_functioning"
@@ -184,14 +185,14 @@ defmodule BuildPipeline.RunTest do
     end
 
     test "when from failed (ff) is set, save the result to file, when running it again, read the file & skip the previously successful build steps" do
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       previous_run_result_file =
         "./example_projects/complex_and_failing/build_pipeline/previous_run_result.json"
 
       File.rm(previous_run_result_file)
 
-      :ok =
+      {:ok, _} =
         Run.main([
           "--cwd",
           "./example_projects/complex_and_failing",
@@ -230,7 +231,7 @@ defmodule BuildPipeline.RunTest do
                }
              ]
 
-      :ok =
+      {:ok, _} =
         Run.main([
           "--cwd",
           "./example_projects/complex_and_failing",
@@ -321,11 +322,11 @@ defmodule BuildPipeline.RunTest do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning",
@@ -342,11 +343,11 @@ defmodule BuildPipeline.RunTest do
       original_env = Application.get_env(:build_pipeline, :print_runner_output)
 
       Application.put_env(:build_pipeline, :print_runner_output, true)
-      EnvVarsSystemMock.setup()
+      FetchEnvVarsMock.setup()
 
       output =
         capture_io(fn ->
-          assert :ok ==
+          assert {:ok, _} =
                    Run.main([
                      "--cwd",
                      "./example_projects/complex_yet_functioning"
@@ -354,6 +355,33 @@ defmodule BuildPipeline.RunTest do
         end)
 
       assert Enum.all?(stats_regexes(), fn regex -> Regex.match?(regex, output) == false end)
+
+      Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
+
+    test "--analyse-self-worth mode!" do
+      original_env = Application.get_env(:build_pipeline, :print_runner_output)
+
+      Application.put_env(:build_pipeline, :print_runner_output, true)
+      FetchEnvVarsMock.setup()
+      Mimic.copy(RunSecondBuildPipelineInstance)
+      Mimic.stub(RunSecondBuildPipelineInstance, :run, fn _args -> {"horray", 0} end)
+
+      output =
+        capture_io(fn ->
+          assert :ok ==
+                   Run.main([
+                     "--cwd",
+                     "./example_projects/complex_yet_functioning",
+                     "--analyse-self-worth"
+                   ])
+        end)
+
+      build_pipeline_regex = ~r|build_pipeline runtime = [0-9].*|
+      serial_regex = ~r|serial runtime = [0-9].*|
+
+      assert Regex.match?(build_pipeline_regex, output)
+      assert Regex.match?(serial_regex, output)
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
     end

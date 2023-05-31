@@ -3,6 +3,22 @@ defmodule BuildPipeline.Run.PrettyDurationMessageTest do
   alias BuildPipeline.Run.PrettyDurationMessage
 
   describe "create/1 - given a duration_in_microseconds" do
+    test "negative durations are given the proper units & rounding" do
+      durations = [
+        {-1, "-1 μs"},
+        {-1000, "-1 ms"},
+        {-1_000_000, "-1.0 s"},
+        {-60_000_000, "-1.0 min"}
+      ]
+
+      Enum.each(durations, fn {duration, expected_output} ->
+        result = PrettyDurationMessage.create(duration)
+
+        assert result == expected_output,
+               "Given input of #{duration} I expected a result of #{expected_output}, but instead this was returned: #{result}"
+      end)
+    end
+
     test "when it's less than 1k return a duration in microseconds [μs]" do
       durations = [
         {0, "0 μs"},

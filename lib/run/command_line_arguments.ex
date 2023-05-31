@@ -5,7 +5,8 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     mode: :normal,
     save_result: false,
     run_from_failed: false,
-    show_stats: false
+    show_stats: false,
+    halt_when_done: true
   }
   @cwd "--cwd"
   @verbose "--verbose"
@@ -13,6 +14,7 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   @from_failed "--ff"
   @run_all "--ra"
   @stats "--stats"
+  @analyse_self_worth "--analyse-self-worth"
   # keep usage_instructions in sync with the README.md file
   @usage_instructions """
   usage: ./bp run [--cwd ./path/to/directory/to/use] [--verbose or --debug] [--ff or --ra] [--stats]
@@ -28,6 +30,8 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   --ra       - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
 
   --stats    - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. Cannot be set with --debug
+
+  --analyse-self-worth    - Runs the full build pipeline twice. Once with full parallism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! Basically every other command line argument except --cwd is incompatible with this one.
   """
 
   @incompatible_args_error """
@@ -37,6 +41,12 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   --debug cannot be set with --verbose
   --debug cannot be set with --stats
 
+  --analyse-self-worth cannot be set with any of the following
+     --verbose
+     --debug
+     --ff
+     --ra
+     --stats
   """
 
   @bad_args_error """
@@ -60,17 +70,39 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     end
   end
 
-  defp acc_setup_from_cli_args(setup, []) do
+  defp acc_setup_from_cli_args(setup, command_line_args) do
+    case analyse_self_worth(command_line_args) do
+      {true, command_line_args} ->
+        setup
+        |> Map.put(:mode, {:analyse_self_worth, command_line_args})
+        |> Map.put(:save_result, false)
+        |> Map.put(:run_from_failed, false)
+        |> do_acc_setup_from_cli_args(command_line_args)
+
+      {false, command_line_args} ->
+        do_acc_setup_from_cli_args(setup, command_line_args)
+    end
+  end
+
+  defp analyse_self_worth(command_line_args) do
+    if Enum.member?(command_line_args, @analyse_self_worth) do
+      {true, command_line_args -- [@analyse_self_worth]}
+    else
+      {false, command_line_args}
+    end
+  end
+
+  defp do_acc_setup_from_cli_args(setup, []) do
     {:ok, setup}
   end
 
-  defp acc_setup_from_cli_args(setup, [@cwd, cwd | rest]) do
-    acc_setup_from_cli_args(Map.put(setup, :cwd, cwd), rest)
+  defp do_acc_setup_from_cli_args(setup, [@cwd, cwd | rest]) do
+    do_acc_setup_from_cli_args(Map.put(setup, :cwd, cwd), rest)
   end
 
-  defp acc_setup_from_cli_args(setup, [cli_arg | rest]) do
+  defp do_acc_setup_from_cli_args(setup, [cli_arg | rest]) do
     case put_setup_from_singular_cli_arg(setup, cli_arg) do
-      {:ok, setup} -> acc_setup_from_cli_args(setup, rest)
+      {:ok, setup} -> do_acc_setup_from_cli_args(setup, rest)
       error -> error
     end
   end
@@ -107,7 +139,11 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   defp incompatible_args?(command_line_args) do
     (@debug in command_line_args and @verbose in command_line_args) or
       (@run_all in command_line_args and @from_failed in command_line_args) or
-      (@debug in command_line_args and @stats in command_line_args)
+      (@debug in command_line_args and @stats in command_line_args) or
+      (@analyse_self_worth in command_line_args and
+         (@verbose in command_line_args or @debug in command_line_args or
+            @from_failed in command_line_args or @run_all in command_line_args or
+            @stats in command_line_args))
   end
 
   defp put_default_setup(setup) do
