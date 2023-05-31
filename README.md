@@ -126,7 +126,7 @@ And you're away!
 
 By default, _output from successful commands are silenced_, and `command` output is only displayed by the first command that fails (returns a non 0 exit code). In the event of a command failing, subsequent dependent commands and commands in progress are gracefully not started or terminated respectively.
 
-Once you're confident your build is running successfully as it should, I reccommend adding `bp` to your PATH and running `bp run --analyse-self-worth`, which will tell you how much faster the build is with `bp` vs just running each build step one at a time. See the section about this below for more details.
+Once you're confident your build is running successfully as it should, I recommend adding `bp` to your PATH and running `bp run --analyse-self-worth`, which will tell you how much faster the build is with `bp` vs just running each build step one at a time. See the section about this below for more details.
 
 ## Reccomendations on how to run build_pipeline on CI vs localy
 
