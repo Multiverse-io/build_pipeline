@@ -159,12 +159,12 @@ defmodule BuildPipeline.Run.CommandLineArguments do
   }
 
   defp incompatible_args?(command_line_args) do
-    {_arg, incompatible} =
-      Enum.find(@incompatible_args, {nil, []}, fn {arg, _incompatible} ->
-        arg in command_line_args
-      end)
-
-    Enum.any?(incompatible, fn arg ->
+    @incompatible_args
+    |> Enum.filter(fn {arg, _incompatible} ->
+      arg in command_line_args
+    end)
+    |> Enum.flat_map(fn {_arg, incompatible} -> incompatible end)
+    |> Enum.any?(fn arg ->
       arg in command_line_args
     end)
   end
