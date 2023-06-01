@@ -1,17 +1,12 @@
 defmodule BuildPipeline.Run.JsonReport do
-  alias BuildPipeline.Run.JsonReport.Generator
-
-  @output_filename "build_report.json"
+  alias BuildPipeline.Run.JsonReport.{FileWriter, Generator}
 
   def generate(%{json_report: true} = state) do
     state.runners
     |> Generator.generate()
-    |> write_file()
+    |> Jason.encode!(pretty: true)
+    |> FileWriter.write()
   end
 
   def generate(_), do: nil
-
-  defp write_file(report) do
-    File.write!(@output_filename, Jason.encode!(report, pretty: true))
-  end
 end

@@ -7,8 +7,11 @@ defmodule BuildPipeline.RunTest do
   alias BuildPipeline.Run.AnalyseSelfWorth.RunSecondBuildPipelineInstance
   alias BuildPipeline.Run.TerminalWidth.TputCols
   alias BuildPipeline.Run.Mocks.TputCols.{NotOnSystem, NonsenseResult}
+  alias BuildPipeline.Run.JsonReport.FileWriter
 
   @moduletag timeout: 3_000
+
+  setup :set_mimic_global
 
   describe "main/1" do
     test "can show runner output on the screen" do
@@ -357,6 +360,20 @@ defmodule BuildPipeline.RunTest do
       assert Enum.all?(stats_regexes(), fn regex -> Regex.match?(regex, output) == false end)
 
       Application.put_env(:build_pipeline, :print_runner_output, original_env)
+    end
+
+    test "running with --json-report creates a report file" do
+      Mimic.copy(FileWriter)
+      Mimic.expect(FileWriter, :write, 1, fn report ->
+        assert Jason.decode!(report)
+      end)
+
+      assert {:ok, _} =
+        Run.main([
+          "--cwd",
+          "./example_projects/complex_yet_functioning",
+          "--json-report"
+        ])
     end
 
     test "--analyse-self-worth mode!" do

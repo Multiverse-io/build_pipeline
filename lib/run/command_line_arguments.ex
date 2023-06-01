@@ -48,6 +48,7 @@ defmodule BuildPipeline.Run.CommandLineArguments do
     --ff cannot be set with --ra
     --debug cannot be set with --verbose
     --debug cannot be set with --stats
+    --debug cannot be set with --json-report
 
     --analyse-self-worth cannot be set with any of the following
        --verbose
