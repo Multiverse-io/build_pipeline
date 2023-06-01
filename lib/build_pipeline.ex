@@ -32,5 +32,5 @@ defmodule BuildPipeline do
     IO.puts(@help)
   end
 
-  def version, do: "0.0.13"
+  def version, do: "0.0.14"
 end

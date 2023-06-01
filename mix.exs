@@ -8,7 +8,7 @@ defmodule BuildPipeline.MixProject do
       app: :build_pipeline,
       description: description(),
       package: package(),
-      version: "0.3.0",
+      version: "0.0.14",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
