@@ -11,6 +11,7 @@ defmodule BuildPipeline.Run.Builders.ServerStateBuilder do
       mode: :normal,
       save_result: false,
       show_stats: false,
+      json_report: false,
       cwd: "."
     }
   end
@@ -37,5 +38,9 @@ defmodule BuildPipeline.Run.Builders.ServerStateBuilder do
 
   def with_show_stats(server_state, show_stats) do
     update_in(server_state, [:show_stats], fn _ -> show_stats end)
+  end
+
+  def with_json_report(server_state, json_report) do
+    update_in(server_state, [:json_report], fn _ -> json_report end)
   end
 end

@@ -174,7 +174,7 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 
 ### Command Line Arguments
 
-<!-- keep this in sync with the usage instrucitons in lib/run/command_line_arguments.ex -->
+<!-- keep this in sync with the usage instructions in lib/run/command_line_arguments.ex -->
 
 `--verbose` - prints output from successful as well as failed build steps to the terminal. Cannot be set with --debug
 
@@ -187,6 +187,8 @@ Note that if the env var `BUILD_PIPELINE_FROM_FAILED=true` is set, it can easily
 `--ra` - run-all: in the event that from-failed mode is set by an environment variable, this can be used to override it and force all build steps to run (as is the default behaviour). Cannot be set with --ff
 
 `--stats` - puts some additional output at the end of the run - showing the ranking of each dependency "branch" by speed, showing the speed of each build step within it too. See below for more info. Cannot be set with --debug
+
+`--json-report` - creates a json report including all the steps run, their timings and whether they succeeded or not. Cannot be set with --debug
 
 `--analyse-self-worth` - Runs the full build pipeline twice. Once with full parallelism including build_pipeine overhead, and once serially without build_pipeline overhead. Reports the timings of both. Useful for finding out how much time (if any) is saved by running your build with build_pipeline. Doesn't work unless `bp` is in your PATH! See below section for more details.
 

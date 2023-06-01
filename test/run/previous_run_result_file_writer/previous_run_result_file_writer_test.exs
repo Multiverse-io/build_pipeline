@@ -1,5 +1,6 @@
 defmodule BuildPipeline.Run.PreviousRunResultFileWriterTest do
   use ExUnit.Case, async: false
+
   # async: false because Mimic.copy(File) doesn't seem to like calling it many times in async tests
   use Mimic
   alias BuildPipeline.Run.{PreviousRunResultFileWriter, Const}
