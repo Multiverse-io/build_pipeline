@@ -32,3 +32,6 @@ example_projects/test_project/**
 bp_dev
 bp
 build_report.json
+
+# Nix.
+/result
