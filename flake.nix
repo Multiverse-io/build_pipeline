@@ -18,7 +18,7 @@
       pkgs = import nixpkgs {inherit system;};
       beamPackages = pkgs.beam.packages.erlang_25;
       elixir = beamPackages.elixir_1_14;
-      hex = beamPackages.hex;
+      src = pkgs.nix-gitignore.gitignoreSource [] ./.;
     in {
       # `nix develop`.
       devShells = {
@@ -32,23 +32,25 @@
       formatter = pkgs.alejandra;
       # `nix build`.
       packages = {
-        build-pipeline = pkgs.stdenvNoCC.mkDerivation {
-          inherit pname version;
-          src = pkgs.nix-gitignore.gitignoreSource [] ./.;
-          nativeBuildInputs = [elixir pkgs.makeWrapper];
-          buildPhase = ''
-            # Expose Nix's hex to Mix.
-            export MIX_PATH="${hex}/lib/erlang/lib/hex/ebin"
-            export HOME=$PWD/.hex
-            mkdir -p $HOME
-            mix deps.get
+        build-pipeline = beamPackages.mixRelease {
+          inherit pname src version;
+          mixFodDeps = beamPackages.fetchMixDeps {
+            inherit pname src version;
+            hash = "sha256-H7yiBHoxuiqWcNbWwPU5X0Nnv8f6nM8z/ZAfZAGPZjE=";
+            mixEnv = "prod";
+          };
+          postBuild = ''
             env MIX_ENV=prod mix escript.build
           '';
-          installPhase = ''
+          postInstall = ''
+            # Install the `bp` escript.
             mkdir -p $out/bin
             cp bp $out/bin/bp
             wrapProgram $out/bin/bp \
               --prefix PATH : ${pkgs.lib.makeBinPath [beamPackages.erlang]}
+
+            # Clean up the Mix release stuff, most of which we don't need.
+            rm -r $out/{lib,releases,erts-*,bin/build_pipeline}
           '';
         };
         default = self.packages.${system}.build-pipeline;
