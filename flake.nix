@@ -2,7 +2,7 @@
   description = "A development tool for running commands with maximum possible concurrency.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -16,9 +16,9 @@
       version = "0.0.14";
 
       pkgs = import nixpkgs {inherit system;};
-      beamPackages = pkgs.beam.packages.erlang_25;
-      elixir = beamPackages.elixir_1_14;
-      src = pkgs.nix-gitignore.gitignoreSource [] ./.;
+      beamPackages = pkgs.beam.packages.erlang_27;
+      elixir = beamPackages.elixir_1_17;
+      src = builtins.path { path = pkgs.nix-gitignore.gitignoreSource [] ./.; name = "source"; };
     in {
       # `nix develop`.
       devShells = {
@@ -36,7 +36,7 @@
           inherit pname src version;
           mixFodDeps = beamPackages.fetchMixDeps {
             inherit pname src version;
-            hash = "sha256-H7yiBHoxuiqWcNbWwPU5X0Nnv8f6nM8z/ZAfZAGPZjE=";
+            hash = "sha256-CHbl9xQU+4jMPiAC6Eqwh9S3kAHj153P0atXfklXZV0=";
             mixEnv = "prod";
           };
           postBuild = ''
